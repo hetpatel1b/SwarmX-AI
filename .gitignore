@@ -9,7 +9,6 @@ backend-research-agent/node_modules/
 backend-research-agent/.env
 backend-research-agent/.env.*
 !backend-research-agent/.env.example
-
 # Logs
 logs/
 *.log
