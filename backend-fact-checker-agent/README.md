@@ -66,9 +66,13 @@ JWT_SECRET=
 
 REDIS_HOST=localhost
 REDIS_PORT=6379
+REDIS_ENABLED=true
+REDIS_REQUIRED=false
+REDIS_CONNECT_TIMEOUT_MS=1500
 ```
 
 In production, Groq, Tavily, Serper, and JWT values are required by environment validation.
+Redis is optional by default. When Redis is unavailable, the API starts normally, disables distributed caching and queue workers, and logs a warning. Set `REDIS_REQUIRED=true` only for deployments that must fail fast without Redis.
 
 ## AI and Search Configuration
 
@@ -141,6 +145,8 @@ This starts:
 
 - `fact-checker-api` on port `8080`
 - `redis` on port `6379`
+
+Redis is not required for local development. Running `npm run dev` without Redis installed still starts the API; cache lookups become no-ops and `includeQueue` requests fall back to the synchronous response.
 
 ## Deployment
 

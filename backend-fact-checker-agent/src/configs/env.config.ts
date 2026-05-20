@@ -3,6 +3,13 @@ import { z } from "zod";
 
 dotenv.config();
 
+const envBoolean = (defaultValue: boolean) =>
+  z.preprocess((value) => {
+    if (typeof value === "boolean") return value;
+    if (typeof value !== "string" || value.trim() === "") return defaultValue;
+    return value.trim().toLowerCase() === "true";
+  }, z.boolean());
+
 const envSchema = z
   .object({
     PORT: z.coerce.number().int().positive().default(8080),
@@ -15,8 +22,11 @@ const envSchema = z
     TAVILY_SEARCH_DEPTH: z.enum(["basic", "advanced"]).default("advanced"),
     SERPER_API_KEY: z.string().optional().default(""),
     JWT_SECRET: z.string().min(12).default("change-me-in-production"),
+    REDIS_ENABLED: envBoolean(true),
+    REDIS_REQUIRED: envBoolean(false),
     REDIS_HOST: z.string().default("localhost"),
-    REDIS_PORT: z.coerce.number().int().positive().default(6379)
+    REDIS_PORT: z.coerce.number().int().positive().default(6379),
+    REDIS_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(1500)
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production") {

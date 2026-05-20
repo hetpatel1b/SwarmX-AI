@@ -1,9 +1,9 @@
-import { redisClient } from "./redis.client";
+import { isRedisReady, redisClient } from "./redis.client";
 import { logger } from "../utils/logger";
 
 export class CacheService {
   async get<T>(key: string): Promise<T | null> {
-    if (!redisClient || redisClient.status !== "ready") return null;
+    if (!redisClient || !isRedisReady()) return null;
     try {
       const cached = await redisClient.get(key);
       return cached ? (JSON.parse(cached) as T) : null;
@@ -14,7 +14,7 @@ export class CacheService {
   }
 
   async set<T>(key: string, value: T, ttlSeconds = 900): Promise<void> {
-    if (!redisClient || redisClient.status !== "ready") return;
+    if (!redisClient || !isRedisReady()) return;
     try {
       await redisClient.set(key, JSON.stringify(value), "EX", ttlSeconds);
     } catch (error) {

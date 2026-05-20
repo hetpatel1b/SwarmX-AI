@@ -1,11 +1,16 @@
 import { Queue, Worker, Job } from "bullmq";
-import { redisClient } from "../cache/redis.client";
+import { isRedisReady, redisClient } from "../cache/redis.client";
 import { FactCheckRequest } from "../types/factCheck.types";
 import { factCheckerAgent } from "../agents/factCheckerAgent";
 import { logger } from "../utils/logger";
 
-export const factCheckQueue = redisClient
-  ? new Queue<FactCheckRequest>("fact-check-jobs", {
+let factCheckQueue: Queue<FactCheckRequest> | null = null;
+
+const getFactCheckQueue = (): Queue<FactCheckRequest> | null => {
+  if (!redisClient || !isRedisReady()) return null;
+
+  if (!factCheckQueue) {
+    factCheckQueue = new Queue<FactCheckRequest>("fact-check-jobs", {
       connection: redisClient,
       defaultJobOptions: {
         attempts: 3,
@@ -13,17 +18,33 @@ export const factCheckQueue = redisClient
         removeOnComplete: 100,
         removeOnFail: 500
       }
-    })
-  : null;
+    });
+
+    factCheckQueue.on("error", (error) => {
+      logger.warn("Fact-check queue error; queueing is temporarily unavailable", {
+        message: error.message
+      });
+    });
+  }
+
+  return factCheckQueue;
+};
 
 export const addFactCheckJob = async (payload: FactCheckRequest): Promise<string | null> => {
-  if (!factCheckQueue || redisClient?.status !== "ready") return null;
-  const job = await factCheckQueue.add("verify-claim", payload);
-  return job.id || null;
+  const queue = getFactCheckQueue();
+  if (!queue) return null;
+
+  try {
+    const job = await queue.add("verify-claim", payload);
+    return job.id || null;
+  } catch (error) {
+    logger.warn("Unable to enqueue fact-check job; continuing with synchronous response", { error });
+    return null;
+  }
 };
 
 export const startFactCheckWorker = (): Worker<FactCheckRequest> | null => {
-  if (!redisClient || redisClient.status !== "ready") {
+  if (!redisClient || !isRedisReady()) {
     logger.info("Fact-check worker disabled because Redis is not connected");
     return null;
   }
@@ -35,5 +56,12 @@ export const startFactCheckWorker = (): Worker<FactCheckRequest> | null => {
 
   worker.on("completed", (job) => logger.info("Fact-check job completed", { jobId: job.id }));
   worker.on("failed", (job, error) => logger.error("Fact-check job failed", { jobId: job?.id, error }));
+  worker.on("error", (error) => logger.warn("Fact-check worker Redis error", { message: error.message }));
   return worker;
+};
+
+export const closeFactCheckQueue = async (): Promise<void> => {
+  if (!factCheckQueue) return;
+  await factCheckQueue.close();
+  factCheckQueue = null;
 };

@@ -2,7 +2,7 @@ import app from "./app";
 import { env } from "./configs/env.config";
 import { connectRedis, disconnectRedis } from "./cache/redis.client";
 import { initializeDatabase } from "./database/connection";
-import { startFactCheckWorker } from "./queues/factCheck.queue";
+import { closeFactCheckQueue, startFactCheckWorker } from "./queues/factCheck.queue";
 import { logger } from "./utils/logger";
 
 const bootstrap = async (): Promise<void> => {
@@ -18,6 +18,7 @@ const bootstrap = async (): Promise<void> => {
     logger.info(`Received ${signal}; shutting down gracefully`);
     server.close(async () => {
       await worker?.close();
+      await closeFactCheckQueue();
       await disconnectRedis();
       process.exit(0);
     });
