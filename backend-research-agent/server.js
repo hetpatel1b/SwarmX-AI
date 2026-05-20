@@ -1,5 +1,5 @@
 import app from "./src/app.js";
-import { appConfig } from "./src/config/openai.js";
+import { appConfig } from "./src/config/groq.js";
 import { logger } from "./src/utils/logger.js";
 
 const server = app.listen(appConfig.port, () => {

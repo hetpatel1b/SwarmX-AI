@@ -1,7 +1,7 @@
 {
   "name": "backend-research-agent",
   "version": "1.0.0",
-  "description": "Modular Express backend for an OpenAI-powered AI Research Agent Swarm.",
+  "description": "Modular Express backend for a Groq-powered AI Research Agent Swarm.",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -10,7 +10,7 @@
   },
   "keywords": [
     "research-agent",
-    "openai",
+    "groq",
     "express",
     "nodejs",
     "multi-agent"
@@ -21,7 +21,7 @@
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.2",
-    "openai": "^6.38.0"
+    "groq-sdk": "^1.2.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

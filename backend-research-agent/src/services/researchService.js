@@ -1,14 +1,14 @@
-import { appConfig, getOpenAIClient } from "../config/openai.js";
+import { appConfig, getGroqClient } from "../config/groq.js";
 import { logger } from "../utils/logger.js";
 
 export const generateResearch = async ({ query, systemPrompt }) => {
-  const client = getOpenAIClient();
+  const groq = getGroqClient();
 
   try {
-    const completion = await client.chat.completions.create({
-      model: appConfig.openai.model,
-      temperature: appConfig.openai.temperature,
-      max_tokens: appConfig.openai.maxTokens,
+    const response = await groq.chat.completions.create({
+      model: appConfig.groq.model,
+      temperature: appConfig.groq.temperature,
+      max_tokens: appConfig.groq.maxTokens,
       messages: [
         {
           role: "system",
@@ -21,10 +21,10 @@ export const generateResearch = async ({ query, systemPrompt }) => {
       ]
     });
 
-    const content = completion.choices?.[0]?.message?.content?.trim();
+    const content = response.choices?.[0]?.message?.content?.trim();
 
     if (!content) {
-      const error = new Error("OpenAI returned an empty response");
+      const error = new Error("Groq returned an empty response");
       error.statusCode = 502;
       throw error;
     }
@@ -35,15 +35,15 @@ export const generateResearch = async ({ query, systemPrompt }) => {
       throw error;
     }
 
-    logger.error("OpenAI request failed", {
+    logger.error("Groq request failed", {
       message: error.message,
       status: error.status
     });
 
     const serviceError = new Error(
-      error.message || "OpenAI research generation failed"
+      error.message || "Groq research generation failed"
     );
-    serviceError.name = "OpenAIServiceError";
+    serviceError.name = "GroqServiceError";
     serviceError.statusCode = error.status || 502;
     throw serviceError;
   }

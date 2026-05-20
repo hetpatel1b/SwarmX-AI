@@ -1,6 +1,6 @@
 # Backend Research Agent
 
-Beginner-friendly Node.js and Express backend for an OpenAI-powered AI Research Agent Swarm.
+Beginner-friendly Node.js and Express backend for a Groq-powered AI Research Agent Swarm.
 
 The current backend exposes one research endpoint and is structured so future agents, tool calling, memory, vector databases, web scraping, and orchestration can be added without flattening the codebase.
 
@@ -9,7 +9,7 @@ The current backend exposes one research endpoint and is structured so future ag
 - Node.js
 - Express.js
 - dotenv
-- OpenAI SDK
+- Groq SDK
 - ES Modules
 - nodemon for local development
 
@@ -19,7 +19,7 @@ The current backend exposes one research endpoint and is structured so future ag
 backend-research-agent/
 |-- src/
 |   |-- config/
-|   |   `-- openai.js
+|   |   `-- groq.js
 |   |-- agents/
 |   |   `-- researchAgent.js
 |   |-- routes/
@@ -45,8 +45,8 @@ backend-research-agent/
 
 - `server.js` starts the HTTP server and handles process-level crashes.
 - `src/app.js` creates the Express app, registers middleware, routes, health checks, and error handling.
-- `src/config/openai.js` loads environment variables and creates the official OpenAI SDK client.
-- `src/services/researchService.js` is the OpenAI service layer. Keep API calls here.
+- `src/config/groq.js` loads environment variables and creates the official Groq SDK client.
+- `src/services/researchService.js` is the Groq service layer. Keep API calls here.
 - `src/agents/researchAgent.js` owns the research prompt and can evolve into a larger agent.
 - `src/controllers/researchController.js` validates API input and formats API responses.
 - `src/routes/researchRoutes.js` maps `/api/research` to the controller.
@@ -79,9 +79,9 @@ Fill in `.env`:
 PORT=5000
 NODE_ENV=development
 
-OPENAI_API_KEY=your-openai-api-key
+GROQ_API_KEY=your-groq-api-key
 
-AI_MODEL=gpt-4o-mini
+AI_MODEL=llama-3.3-70b-versatile
 AI_TEMPERATURE=0.2
 AI_MAX_TOKENS=1200
 ```
@@ -134,7 +134,7 @@ Expected response shape:
 ## Notes for Future Growth
 
 - Add new agents under `src/agents`.
-- Add reusable OpenAI or tool integrations under `src/services`.
+- Add reusable Groq or tool integrations under `src/services`.
 - Add memory, vector database, and web-search modules as separate services.
 - Add orchestration logic in a dedicated `src/orchestrators` folder when multiple agents need to coordinate.
 - Keep controllers thin: validate requests, call agents/services, and return clean responses.
