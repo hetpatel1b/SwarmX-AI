@@ -1,0 +1,184 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SwarmX-AI Fact Checker Agent API",
+    "version": "1.0.0",
+    "description": "Enterprise AI fact-checking backend using Azure OpenAI, Azure AI Search, Redis, BullMQ, and Express."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service is healthy"
+          }
+        }
+      }
+    },
+    "/api/status": {
+      "get": {
+        "summary": "Dependency and runtime status",
+        "responses": {
+          "200": {
+            "description": "Service status"
+          }
+        }
+      }
+    },
+    "/api/fact-check": {
+      "post": {
+        "summary": "Verify a claim",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactCheckRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Structured fact-check report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactCheckApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/verify-url": {
+      "post": {
+        "summary": "Validate a URL and optionally fact-check a claim",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyUrlRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "URL validation result"
+          }
+        }
+      }
+    },
+    "/api/extract-claims": {
+      "post": {
+        "summary": "Extract factual claims from text",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractClaimsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Extracted claims"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "FactCheckRequest": {
+        "type": "object",
+        "required": ["claim"],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "example": "The Earth is flat."
+          },
+          "context": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "example": "en"
+          },
+          "includeQueue": {
+            "type": "boolean"
+          }
+        }
+      },
+      "VerifyUrlRequest": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "claim": {
+            "type": "string"
+          }
+        }
+      },
+      "ExtractClaimsRequest": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "FactCheckApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FactCheckResponse"
+          }
+        }
+      },
+      "FactCheckResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "claim": { "type": "string" },
+          "verification": { "type": "string" },
+          "confidenceScore": { "type": "number" },
+          "riskLevel": { "type": "string" },
+          "hallucinationDetected": { "type": "boolean" },
+          "analysis": { "type": "string" },
+          "sources": { "type": "array", "items": { "type": "object" } },
+          "citations": { "type": "array", "items": { "type": "object" } },
+          "sourceCredibility": { "type": "array", "items": { "type": "object" } },
+          "processingTime": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
