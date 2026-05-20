@@ -1,120 +1,140 @@
-# Research Agent Backend
+# Backend Research Agent
 
-Production-style Node.js and Express backend for an Azure OpenAI-powered Research Agent.
+Beginner-friendly Node.js and Express backend for an OpenAI-powered AI Research Agent Swarm.
 
-This service only implements the Research Agent. It accepts a topic, asks Azure OpenAI for structured research, validates the AI response, and returns clean JSON.
+The current backend exposes one research endpoint and is structured so future agents, tool calling, memory, vector databases, web scraping, and orchestration can be added without flattening the codebase.
+
+## Tech Stack
+
+- Node.js
+- Express.js
+- dotenv
+- OpenAI SDK
+- ES Modules
+- nodemon for local development
 
 ## Folder Structure
 
 ```text
 backend-research-agent/
-├── src/
-│   ├── agents/
-│   │   └── researchAgent.js
-│   ├── services/
-│   │   └── aiService.js
-│   ├── controllers/
-│   │   └── researchController.js
-│   ├── routes/
-│   │   └── researchRoutes.js
-│   ├── utils/
-│   │   └── validateJSON.js
-│   ├── config/
-│   │   └── config.js
-│   └── app.js
-├── server.js
-├── .env.example
-├── package.json
-└── README.md
+|-- src/
+|   |-- config/
+|   |   `-- openai.js
+|   |-- agents/
+|   |   `-- researchAgent.js
+|   |-- routes/
+|   |   `-- researchRoutes.js
+|   |-- controllers/
+|   |   `-- researchController.js
+|   |-- services/
+|   |   `-- researchService.js
+|   |-- middleware/
+|   |   `-- errorMiddleware.js
+|   |-- utils/
+|   |   `-- logger.js
+|   `-- app.js
+|-- server.js
+|-- .env
+|-- .env.example
+|-- package.json
+|-- README.md
+`-- .gitignore
 ```
+
+## Important Files
+
+- `server.js` starts the HTTP server and handles process-level crashes.
+- `src/app.js` creates the Express app, registers middleware, routes, health checks, and error handling.
+- `src/config/openai.js` loads environment variables and creates the official OpenAI SDK client.
+- `src/services/researchService.js` is the OpenAI service layer. Keep API calls here.
+- `src/agents/researchAgent.js` owns the research prompt and can evolve into a larger agent.
+- `src/controllers/researchController.js` validates API input and formats API responses.
+- `src/routes/researchRoutes.js` maps `/api/research` to the controller.
+- `src/middleware/errorMiddleware.js` keeps error responses consistent.
+- `src/utils/logger.js` centralizes basic logging.
 
 ## Setup
 
+From this folder:
+
 ```bash
-cd backend-research-agent
 npm install
+```
+
+Create your environment file:
+
+```bash
 cp .env.example .env
 ```
 
-Update `.env` with your Azure OpenAI resource values:
+On Windows PowerShell:
 
-```env
-AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
-AZURE_OPENAI_API_KEY=your-azure-openai-api-key
-AZURE_OPENAI_DEPLOYMENT_NAME=your-chat-model-deployment-name
-AZURE_OPENAI_API_VERSION=2024-02-15-preview
+```powershell
+Copy-Item .env.example .env
 ```
 
-## Run
+Fill in `.env`:
+
+```env
+PORT=5000
+NODE_ENV=development
+
+OPENAI_API_KEY=your-openai-api-key
+
+AI_MODEL=gpt-4o-mini
+AI_TEMPERATURE=0.2
+AI_MAX_TOKENS=1200
+```
+
+## Run the Backend
+
+Development mode:
 
 ```bash
 npm run dev
 ```
 
-or:
+Production-style start:
 
 ```bash
 npm start
 ```
 
-The API runs on `http://localhost:5000` by default.
+The API runs at:
 
-## Endpoints
-
-### Health Check
-
-```http
-GET /health
+```text
+http://localhost:5000
 ```
 
-### Create Research
+## Test the API
 
-```http
-POST /api/research
-Content-Type: application/json
+Health check:
+
+```bash
+curl http://localhost:5000/health
 ```
 
-Request:
-
-```json
-{
-  "topic": "AI in healthcare"
-}
-```
-
-Response:
-
-```json
-{
-  "topic": "AI in healthcare",
-  "overview": "...",
-  "key_points": ["...", "..."],
-  "applications": ["...", "..."],
-  "challenges": ["...", "..."],
-  "statistics": ["...", "..."],
-  "sources": ["...", "..."]
-}
-```
-
-## Example cURL
+Research request:
 
 ```bash
 curl -X POST http://localhost:5000/api/research \
   -H "Content-Type: application/json" \
-  -d "{\"topic\":\"AI in healthcare\"}"
+  -d "{\"query\":\"Explain quantum computing\"}"
 ```
 
-## Error Handling
+Expected response shape:
 
-The service returns:
+```json
+{
+  "success": true,
+  "data": "AI generated response"
+}
+```
 
-- `400` for invalid request bodies.
-- `404` for unknown routes.
-- `502` when Azure OpenAI fails or returns invalid JSON.
-- `500` for missing server configuration or unexpected errors.
+## Notes for Future Growth
 
-## Notes
-
-- The agent is designed to return only valid JSON.
-- AI output is parsed and validated before being returned to the client.
-- `response_format: { "type": "json_object" }` is sent to Azure OpenAI for supported deployments.
+- Add new agents under `src/agents`.
+- Add reusable OpenAI or tool integrations under `src/services`.
+- Add memory, vector database, and web-search modules as separate services.
+- Add orchestration logic in a dedicated `src/orchestrators` folder when multiple agents need to coordinate.
+- Keep controllers thin: validate requests, call agents/services, and return clean responses.

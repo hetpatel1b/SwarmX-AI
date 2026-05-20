@@ -1,45 +1,27 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const researchRoutes = require("./routes/researchRoutes");
+import cors from "cors";
+import express from "express";
+import { errorHandler, notFoundHandler } from "./middleware/errorMiddleware.js";
+import researchRoutes from "./routes/researchRoutes.js";
 
 const app = express();
 
-app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
-app.use(morgan("combined"));
 
 app.get("/health", (_req, res) => {
-  res.status(200).json({
-    status: "ok",
-    service: "research-agent",
-    timestamp: new Date().toISOString()
+  return res.status(200).json({
+    success: true,
+    data: {
+      status: "ok",
+      service: "backend-research-agent",
+      timestamp: new Date().toISOString()
+    }
   });
 });
 
 app.use("/api/research", researchRoutes);
 
-app.use((req, res) => {
-  res.status(404).json({
-    error: "Not Found",
-    message: `Route ${req.method} ${req.originalUrl} does not exist`
-  });
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-app.use((error, _req, res, _next) => {
-  console.error("[research-agent] Request failed:", error);
-
-  const statusCode = error.statusCode || 500;
-
-  res.status(statusCode).json({
-    error: error.name || "InternalServerError",
-    message:
-      statusCode === 500
-        ? "An unexpected error occurred while processing the research request"
-        : error.message
-  });
-});
-
-module.exports = app;
+export default app;

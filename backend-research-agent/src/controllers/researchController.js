@@ -1,33 +1,37 @@
-const { runResearchAgent } = require("../agents/researchAgent");
+import { runResearchAgent } from "../agents/researchAgent.js";
+import { logger } from "../utils/logger.js";
 
-const createResearch = async (req, res, next) => {
+const validateResearchRequest = (body) => {
+  const query = body?.query;
+
+  if (!query || typeof query !== "string" || query.trim().length === 0) {
+    const error = new Error("A non-empty query string is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (query.trim().length > 500) {
+    const error = new Error("Query must be 500 characters or fewer");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return query.trim();
+};
+
+export const createResearch = async (req, res, next) => {
   try {
-    const { topic } = req.body;
+    const query = validateResearchRequest(req.body);
 
-    if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
-      return res.status(400).json({
-        error: "BadRequest",
-        message: "A non-empty topic string is required"
-      });
-    }
+    logger.info("Research requested", { query });
 
-    if (topic.length > 300) {
-      return res.status(400).json({
-        error: "BadRequest",
-        message: "Topic must be 300 characters or fewer"
-      });
-    }
+    const research = await runResearchAgent(query);
 
-    console.log(`[research-agent] Research requested for topic: ${topic}`);
-
-    const research = await runResearchAgent(topic.trim());
-
-    return res.status(200).json(research);
+    return res.status(200).json({
+      success: true,
+      data: research
+    });
   } catch (error) {
     return next(error);
   }
-};
-
-module.exports = {
-  createResearch
 };

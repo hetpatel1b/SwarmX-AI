@@ -1,18 +1,19 @@
-const app = require("./src/app");
-const config = require("./src/config/config");
+import app from "./src/app.js";
+import { appConfig } from "./src/config/openai.js";
+import { logger } from "./src/utils/logger.js";
 
-const server = app.listen(config.port, () => {
-  console.log(
-    `[research-agent] Server running on port ${config.port} in ${config.nodeEnv} mode`
+const server = app.listen(appConfig.port, () => {
+  logger.info(
+    `Server running on http://localhost:${appConfig.port} in ${appConfig.nodeEnv} mode`
   );
 });
 
 process.on("unhandledRejection", (reason) => {
-  console.error("[research-agent] Unhandled rejection:", reason);
+  logger.error("Unhandled promise rejection", { reason: String(reason) });
   server.close(() => process.exit(1));
 });
 
 process.on("uncaughtException", (error) => {
-  console.error("[research-agent] Uncaught exception:", error);
+  logger.error("Uncaught exception", { message: error.message });
   server.close(() => process.exit(1));
 });

@@ -1,59 +1,32 @@
-const { createChatCompletion } = require("../services/aiService");
-const { parseAndValidateResearchJSON } = require("../utils/validateJSON");
+import { generateResearch } from "../services/researchService.js";
 
-const buildResearchPrompt = (topic) => `
-You are a professional research AI.
-Perform deep research on the given topic.
-Return structured output in JSON format with:
-- overview
-- key points
-- applications
-- challenges
-- statistics
-- sources
+const researchSystemPrompt = `
+You are a careful AI research agent for an AI Research Agent Swarm system.
+Your job is to explain topics clearly, accurately, and practically.
 
-Ensure:
-- clear and concise language
-- realistic and credible information
-- NO extra text outside JSON
-- strictly valid JSON output
+Write beginner-friendly research with:
+- a concise overview
+- key concepts
+- real-world applications
+- important risks or limitations
+- suggested next questions for deeper study
 
-Required JSON schema:
-{
-  "topic": "string",
-  "overview": "string",
-  "key_points": ["string"],
-  "applications": ["string"],
-  "challenges": ["string"],
-  "statistics": ["string"],
-  "sources": ["string"]
-}
+Do not invent sources. If live web-search tools are not available, say so
+briefly instead of pretending you browsed the web.
+`.trim();
 
-Topic: ${topic}
-`;
+const buildResearchQuery = (query) => `
+Research this topic:
+${query}
 
-const runResearchAgent = async (topic) => {
-  const messages = [
-    {
-      role: "system",
-      content:
-        "You are a precise research agent that returns only strict, valid JSON. Do not use markdown fences."
-    },
-    {
-      role: "user",
-      content: buildResearchPrompt(topic)
-    }
-  ];
+Return a polished plain-text answer that is easy to read.
+`.trim();
 
-  const aiText = await createChatCompletion(messages);
-  const research = parseAndValidateResearchJSON(aiText);
-
-  return {
-    ...research,
-    topic: research.topic || topic
-  };
-};
-
-module.exports = {
-  runResearchAgent
+// Agents own prompt strategy. Services own model/API calls. This separation
+// makes it straightforward to add more agents later without rewriting OpenAI code.
+export const runResearchAgent = async (query) => {
+  return generateResearch({
+    query: buildResearchQuery(query),
+    systemPrompt: researchSystemPrompt
+  });
 };
