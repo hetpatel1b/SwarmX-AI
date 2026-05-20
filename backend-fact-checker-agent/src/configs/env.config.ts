@@ -7,12 +7,13 @@ const envSchema = z
   .object({
     PORT: z.coerce.number().int().positive().default(8080),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    AZURE_OPENAI_API_KEY: z.string().optional().default(""),
-    AZURE_OPENAI_ENDPOINT: z.string().url().optional().or(z.literal("")).default(""),
-    AZURE_OPENAI_DEPLOYMENT: z.string().optional().default(""),
-    AZURE_AI_SEARCH_ENDPOINT: z.string().url().optional().or(z.literal("")).default(""),
-    AZURE_AI_SEARCH_API_KEY: z.string().optional().default(""),
-    AZURE_AI_SEARCH_INDEX: z.string().optional().default(""),
+    GROQ_API_KEY: z.string().optional().default(""),
+    GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
+    GROQ_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.1),
+    GROQ_MAX_TOKENS: z.coerce.number().int().positive().default(1200),
+    TAVILY_API_KEY: z.string().optional().default(""),
+    TAVILY_SEARCH_DEPTH: z.enum(["basic", "advanced"]).default("advanced"),
+    SERPER_API_KEY: z.string().optional().default(""),
     JWT_SECRET: z.string().min(12).default("change-me-in-production"),
     REDIS_HOST: z.string().default("localhost"),
     REDIS_PORT: z.coerce.number().int().positive().default(6379)
@@ -20,12 +21,9 @@ const envSchema = z
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production") {
       const required = [
-        "AZURE_OPENAI_API_KEY",
-        "AZURE_OPENAI_ENDPOINT",
-        "AZURE_OPENAI_DEPLOYMENT",
-        "AZURE_AI_SEARCH_ENDPOINT",
-        "AZURE_AI_SEARCH_API_KEY",
-        "AZURE_AI_SEARCH_INDEX",
+        "GROQ_API_KEY",
+        "TAVILY_API_KEY",
+        "SERPER_API_KEY",
         "JWT_SECRET"
       ] as const;
 

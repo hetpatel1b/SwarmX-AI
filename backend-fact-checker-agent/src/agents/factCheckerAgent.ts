@@ -1,6 +1,6 @@
 import crypto from "crypto";
-import { azureOpenAIService } from "../services/azureOpenAI.service";
-import { azureSearchService } from "../services/azureSearch.service";
+import { groqService } from "../services/groq.service";
+import { searchService } from "../services/search.service";
 import { cacheService } from "../cache/cache.service";
 import { citationService } from "../services/citation.service";
 import { confidenceService } from "../services/confidence.service";
@@ -21,14 +21,14 @@ export class FactCheckerAgent {
 
     logger.info("Starting fact-check pipeline", { claim: normalizedClaim });
 
-    const extractedClaims = await azureOpenAIService.extractClaims(
+    const extractedClaims = await groqService.extractClaims(
       request.context ? `${request.context}\n${normalizedClaim}` : normalizedClaim
     );
     const segmentedClaim = extractedClaims[0] || normalizedClaim;
-    const sources = await azureSearchService.retrieveSources(segmentedClaim);
+    const sources = await searchService.retrieveSources(segmentedClaim);
     const validatedSources = this.validateSources(sources);
     const evidence = this.compareSources(validatedSources);
-    const aiVerification = await azureOpenAIService.verifyClaim(segmentedClaim, evidence);
+    const aiVerification = await groqService.verifyClaim(segmentedClaim, evidence);
     const sourceCredibility = sourceCredibilityService.rankSources(validatedSources);
     const citations = citationService.generateCitations(segmentedClaim, validatedSources);
     const confidenceScore = confidenceService.calculate(

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { env } from "../configs/env.config";
-import { isAzureOpenAiConfigured, isAzureSearchConfigured } from "../configs/azure.config";
+import { isGroqConfigured } from "../configs/ai.config";
+import { isSerperConfigured, isTavilyConfigured } from "../configs/search.config";
 import { redisClient } from "../cache/redis.client";
 import { HTTP_STATUS } from "../constants/http.constants";
 
@@ -20,8 +21,9 @@ export class HealthController {
       environment: env.NODE_ENV,
       uptimeSeconds: Math.round(process.uptime()),
       dependencies: {
-        azureOpenAI: isAzureOpenAiConfigured() ? "configured" : "not_configured",
-        azureAISearch: isAzureSearchConfigured() ? "configured" : "not_configured",
+        groq: isGroqConfigured() ? "configured" : "not_configured",
+        tavily: isTavilyConfigured() ? "configured" : "not_configured",
+        serper: isSerperConfigured() ? "configured" : "not_configured",
         redis: redisClient?.status || "disabled"
       },
       timestamp: new Date().toISOString()

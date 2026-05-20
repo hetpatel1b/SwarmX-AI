@@ -3,7 +3,7 @@
   "info": {
     "title": "SwarmX-AI Fact Checker Agent API",
     "version": "1.0.0",
-    "description": "Enterprise AI fact-checking backend using Azure OpenAI, Azure AI Search, Redis, BullMQ, and Express."
+    "description": "Enterprise AI fact-checking backend using Groq, Tavily, Serper, Redis, BullMQ, and Express."
   },
   "servers": [
     {

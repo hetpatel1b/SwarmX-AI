@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { HTTP_STATUS } from "../constants/http.constants";
 import { factCheckerAgent } from "../agents/factCheckerAgent";
-import { azureOpenAIService } from "../services/azureOpenAI.service";
+import { groqService } from "../services/groq.service";
 import { urlValidationService } from "../services/urlValidation.service";
 import { addFactCheckJob } from "../queues/factCheck.queue";
 
@@ -33,7 +33,7 @@ export class FactCheckController {
   }
 
   async extractClaims(req: Request, res: Response): Promise<void> {
-    const claims = await azureOpenAIService.extractClaims(req.body.text);
+    const claims = await groqService.extractClaims(req.body.text);
     res.status(HTTP_STATUS.OK).json({
       success: true,
       data: { claims, count: claims.length },
