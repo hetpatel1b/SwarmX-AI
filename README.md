@@ -91,20 +91,7 @@ LOG_LEVEL=info
 
 Get `GROQ_API_KEY` from: https://console.groq.com
 
-## Deployment
 
-### Render.com (Recommended)
-
-1. Push code to GitHub
-2. Connect repo to Render
-3. Set environment variables in Render dashboard
-4. Deploy!
-
-### Other Platforms
-- **Heroku** - `git push heroku main`
-- **Railway** - Auto-deploy from GitHub
-- **AWS** - EC2 or Elastic Beanstalk
-- **DigitalOcean** - SSH and npm start
 
 ## Project Structure
 
