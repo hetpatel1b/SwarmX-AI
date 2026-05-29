@@ -76,7 +76,7 @@ Copy-Item .env.example .env
 Fill in `.env`:
 
 ```env
-PORT=5000
+PORT=5003
 NODE_ENV=development
 
 GROQ_API_KEY=your-groq-api-key
@@ -103,7 +103,7 @@ npm start
 The API runs at:
 
 ```text
-http://localhost:5000
+http://localhost:5003
 ```
 
 ## Test the API
@@ -111,13 +111,13 @@ http://localhost:5000
 Health check:
 
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:5003/health
 ```
 
 Research request:
 
 ```bash
-curl -X POST http://localhost:5000/api/research \
+curl -X POST http://localhost:5003/api/research \
   -H "Content-Type: application/json" \
   -d "{\"query\":\"Explain quantum computing\"}"
 ```

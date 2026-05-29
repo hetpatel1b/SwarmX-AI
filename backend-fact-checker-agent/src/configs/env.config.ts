@@ -12,7 +12,7 @@ const envBoolean = (defaultValue: boolean) =>
 
 const envSchema = z
   .object({
-    PORT: z.coerce.number().int().positive().default(8080),
+    PORT: z.coerce.number().int().positive().default(5004),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     GROQ_API_KEY: z.string().optional().default(""),
     GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),

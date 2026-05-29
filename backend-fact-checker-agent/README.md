@@ -44,12 +44,12 @@ cp .env.example .env
 npm run dev
 ```
 
-The API starts on `http://localhost:8080` by default.
+The API starts on `http://localhost:5004` by default.
 
 ## Environment Variables
 
 ```env
-PORT=8080
+PORT=5004
 NODE_ENV=development
 
 GROQ_API_KEY=
@@ -96,13 +96,13 @@ The backend uses the official Groq SDK for reasoning and `axios` clients for Tav
 Swagger UI is available at:
 
 ```bash
-http://localhost:8080/docs
+http://localhost:5004/docs
 ```
 
 Example request:
 
 ```bash
-curl -X POST http://localhost:8080/api/fact-check \
+curl -X POST http://localhost:5004/api/fact-check \
   -H "Content-Type: application/json" \
   -d "{\"claim\":\"The Earth orbits the Sun.\"}"
 ```
@@ -143,7 +143,7 @@ docker compose up --build
 
 This starts:
 
-- `fact-checker-api` on port `8080`
+- `fact-checker-api` on port `5004`
 - `redis` on port `6379`
 
 Redis is not required for local development. Running `npm run dev` without Redis installed still starts the API; cache lookups become no-ops and `includeQueue` requests fall back to the synchronous response.

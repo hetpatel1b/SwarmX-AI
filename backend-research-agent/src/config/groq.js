@@ -9,7 +9,7 @@ const toNumber = (value, fallback) => {
 };
 
 export const appConfig = {
-  port: toNumber(process.env.PORT, 5000),
+  port: toNumber(process.env.PORT, 5003),
   nodeEnv: process.env.NODE_ENV || "development",
   groq: {
     apiKey: process.env.GROQ_API_KEY,

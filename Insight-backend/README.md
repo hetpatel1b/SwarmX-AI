@@ -28,7 +28,7 @@ npm install --save-dev jest supertest
 Create `.env` file:
 
 ```env
-PORT=5000
+PORT=5002
 AZURE_ENDPOINT=https://<your-resource-name>.models.ai.azure.com
 GITHUB_TOKEN=<your-github-token>
 PHI_MODEL=Phi-3-small-8k-instruct
@@ -159,7 +159,7 @@ npm run test:watch
 const axios = require('axios');
 
 const summarizerResult = { summary, keyInsights, conclusion };
-const response = await axios.post('http://localhost:5000/api/insights', {
+const response = await axios.post('http://localhost:5002/api/insights', {
   rawText: originalText,
   summary: summarizerResult.summary,
   keyInsights: summarizerResult.keyInsights,
@@ -195,7 +195,7 @@ Test coverage includes:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `PORT` | Server port (default: 5000) | No |
+| `PORT` | Server port (default: 5002) | No |
 | `AZURE_ENDPOINT` | Azure AI endpoint URL | Yes |
 | `GITHUB_TOKEN` | GitHub token for Azure auth | Yes |
 | `PHI_MODEL` | Model name (Phi-3-small-8k-instruct) | Yes |
@@ -214,8 +214,8 @@ Test coverage includes:
 - Check token has necessary permissions
 
 ### **Port conflicts**
-- Change PORT in .env (default 5000)
-- Or kill existing process: `lsof -i :5000`
+- Change PORT in .env (default 5002)
+- Or kill existing process: `lsof -i :5002`
 
 ---
 
@@ -261,7 +261,7 @@ cd ../summerizer-backend && npm run dev
 npm run dev
 
 # Terminal 3: Test the combined flow
-curl -X POST http://localhost:5000/api/analyze \
+curl -X POST http://localhost:5002/api/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "rawText": "Your research text here",

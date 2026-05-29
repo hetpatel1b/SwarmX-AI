@@ -5,7 +5,7 @@ const insightRouter = require("./routes/insight");
 const analyzeRouter = require("./routes/analyze");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 
 // Middleware
 app.use(cors());
