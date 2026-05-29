@@ -1,4 +1,4 @@
-# Swarm AI Agent Backend
+# SwarmX AI Agent Backend
 
 Production-ready Express.js backend with 4 specialized AI agents using Groq API.
 
