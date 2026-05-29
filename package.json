@@ -1,0 +1,38 @@
+{
+  "name": "unified-backend-agents",
+  "version": "1.0.0",
+  "description": "Unified Express backend for multi-agent AI system (Research, Summary, Insight, Fact-Check)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo 'No build step required for ES modules'",
+    "test": "echo 'Add test command here'"
+  },
+  "keywords": [
+    "research-agent",
+    "summarizer-agent",
+    "insight-agent",
+    "fact-check-agent",
+    "groq",
+    "express",
+    "nodejs",
+    "multi-agent",
+    "ai-swarm"
+  ],
+  "author": "SwarmX-AI",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "groq-sdk": "^1.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
