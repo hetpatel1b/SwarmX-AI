@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Circle, Loader2, XCircle } from "lucide-react";
 import type { AgentState } from "@/types/swarm";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { formatSeconds } from "@/utils/format";
+import { agentIdentities } from "@/utils/agents";
 
 const statusIcon = {
   Idle: Circle,
@@ -13,47 +13,120 @@ const statusIcon = {
   Failed: XCircle
 };
 
-export function AgentCard({ agent, active }: { agent: AgentState; active: boolean }) {
-  const Icon = statusIcon[agent.status];
+export function AgentCard({
+  agent,
+  active
+}: {
+  agent: AgentState;
+  active: boolean;
+}) {
+  const identity = agentIdentities[agent.id];
+  const AgentIcon = identity.icon;
+  const StatusIcon = statusIcon[agent.status];
+
   return (
-    <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 260, damping: 22 }}>
-      <Card className={cn("h-full overflow-hidden", active && "border-cyan-300/60 shadow-glow")}>
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle>{agent.name}</CardTitle>
-              <p className="mt-1 text-sm text-slate-400">{agent.role}</p>
+    <motion.div
+      whileHover={{ y: -3, scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24 }}
+      className="h-full"
+    >
+      <div
+        className={cn(
+          "glass-panel relative h-full overflow-hidden rounded-xl transition-all duration-300",
+          active && identity.glowClass,
+          active && identity.borderClass
+        )}
+      >
+        {/* Top glow line */}
+        <div
+          className={cn(
+            "absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent transition-opacity duration-500",
+            active ? "opacity-100" : "opacity-0"
+          )}
+          style={{
+            backgroundImage: `linear-gradient(to right, transparent, ${identity.color}60, transparent)`
+          }}
+        />
+
+        {/* Header */}
+        <div className="space-y-1.5 p-4 pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-lg border transition-all duration-300",
+                  active
+                    ? `${identity.borderClass} ${identity.bgClass} ${identity.textClass}`
+                    : agent.status === "Completed"
+                    ? `${identity.borderClass} ${identity.bgClass} ${identity.textClass} opacity-70`
+                    : "border-white/10 bg-white/[0.05] text-slate-400"
+                )}
+              >
+                <AgentIcon className="h-3.5 w-3.5" />
+              </span>
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  {agent.name.replace(" Agent", "")}
+                </h3>
+                <p className="text-[11px] text-slate-500">{agent.role}</p>
+              </div>
             </div>
+
             <span
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.08]",
-                agent.status === "Running" && "text-cyan-300",
-                agent.status === "Completed" && "text-emerald-300",
-                agent.status === "Failed" && "text-red-300"
+                "flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.04]",
+                agent.status === "Running" && identity.textClass,
+                agent.status === "Completed" && "text-emerald-400",
+                agent.status === "Failed" && "text-red-400"
               )}
             >
-              <Icon className={cn("h-4 w-4", agent.status === "Running" && "animate-spin")} />
+              <StatusIcon
+                className={cn(
+                  "h-3.5 w-3.5",
+                  agent.status === "Running" && "animate-spin"
+                )}
+              />
             </span>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex items-center justify-between text-xs uppercase tracking-[0.18em] text-slate-500">
+        </div>
+
+        {/* Content */}
+        <div className="px-4 pb-4">
+          {/* Status + progress */}
+          <div className="mb-3 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-slate-500">
             <span>{agent.status}</span>
             <span>{Math.round(agent.progress)}%</span>
           </div>
-          <Progress value={agent.progress} />
-          <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-md border border-white/10 bg-black/20 p-3">
-              <p className="text-xs text-slate-500">Execution</p>
-              <p className="mt-1 font-semibold text-white">{agent.executionTime ? formatSeconds(agent.executionTime) : "Ready"}</p>
+          <Progress
+            value={agent.progress}
+            color={identity.progressColor}
+          />
+
+          {/* Telemetry */}
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-white/[0.06] bg-black/20 p-2.5">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                Exec Time
+              </p>
+              <p className="mt-0.5 font-mono text-sm font-semibold text-white">
+                {agent.executionTime
+                  ? formatSeconds(agent.executionTime)
+                  : "—"}
+              </p>
             </div>
-            <div className="rounded-md border border-white/10 bg-black/20 p-3">
-              <p className="text-xs text-slate-500">Confidence</p>
-              <p className="mt-1 font-semibold text-white">{Math.round(agent.confidence)}%</p>
+            <div className="rounded-lg border border-white/[0.06] bg-black/20 p-2.5">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                Confidence
+              </p>
+              <p className="mt-0.5 font-mono text-sm font-semibold text-white">
+                {agent.confidence > 0
+                  ? `${Math.round(agent.confidence)}%`
+                  : "—"}
+              </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </motion.div>
   );
 }
