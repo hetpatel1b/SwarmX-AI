@@ -17,17 +17,22 @@ export async function runFactCheckAgent(claim, context = null) {
   // This is a placeholder that integrates with the fact-checker service
   // The actual implementation uses the groq service for LLM calls
   
-  if (!claim || typeof claim !== 'string') {
-    throw new Error('Claim must be a non-empty string');
+  if (!claim || typeof claim !== "string") {
+    throw new Error("Claim must be a non-empty string");
   }
+
+  const normalizedClaim = claim.trim();
   
   return {
     success: true,
-    claim,
-    verification: 'PENDING',
+    claim: normalizedClaim,
+    verification: "PENDING",
     confidenceScore: 0,
+    trustScore: 0.5,
+    verifiedFacts: [],
     sources: [],
-    message: 'Fact-checking service integration pending'
+    contextProvided: Boolean(context),
+    message: "Fact-checking service integration pending"
   };
 }
 

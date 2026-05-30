@@ -3,6 +3,7 @@ import { runResearchAgent } from "../agents/researchAgent.js";
 import { summarizeText } from "../agents/summaryAgent.js";
 import { runFactCheckAgent } from "../agents/factCheckAgent.js";
 import { generateInsights } from "../agents/insightAgent.js";
+import { generatePresentation } from "../agents/presentationAgent.js";
 import { logger } from "../utils/logger.js";
 
 const router = Router();
@@ -43,22 +44,37 @@ export const runPipeline = async (req, res, next) => {
 
     // Step 3: Fact Check Agent
     logger.info("Step 3: Running Fact Check Agent");
-    const factCheck = await runFactCheckAgent(query);
+    const factCheck = await runFactCheckAgent(summary.summary, research);
     logger.info("Fact check completed");
 
     // Step 4: Insight Agent
     logger.info("Step 4: Running Insight Agent");
+    const verifiedFacts = Array.isArray(factCheck.verifiedFacts)
+      ? factCheck.verifiedFacts
+      : [];
+    const trustScore =
+      typeof factCheck.trustScore === "number" ? factCheck.trustScore : 0.5;
+
     const insights = await generateInsights({
       rawText: research,
       summary: summary.summary,
       keyInsights: summary.keyInsights,
       conclusion: summary.conclusion,
-      verifiedFacts: Array.isArray(factCheck.verifiedFacts) 
-        ? factCheck.verifiedFacts 
-        : [factCheck.claim || "Claim analyzed"],
-      trustScore: factCheck.trustScore || 0.5,
+      verifiedFacts,
+      trustScore,
     });
     logger.info("Insights generated");
+
+    // Step 5: Presentation Agent
+    logger.info("Step 5: Running Presentation Agent");
+    const presentation = await generatePresentation({
+      query,
+      research,
+      summary,
+      factCheck,
+      insights,
+    });
+    logger.info("Presentation generated");
 
     const result = {
       query,
@@ -67,6 +83,7 @@ export const runPipeline = async (req, res, next) => {
         summary,
         factCheck,
         insights,
+        presentation,
       },
       timestamp: new Date().toISOString(),
     };

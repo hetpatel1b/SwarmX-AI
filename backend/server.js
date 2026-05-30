@@ -13,6 +13,7 @@ const server = app.listen(PORT, () => {
   logger.info("  - Insight Agent: POST /api/insights");
   logger.info("  - Fact Check Agent: POST /api/factcheck");
   logger.info("  - Pipeline (All Agents): POST /api/pipeline");
+  logger.info("  - Presentation Agent: POST /api/presentation");
   logger.info("  - Health Check: GET /health");
 });
 
