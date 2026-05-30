@@ -621,19 +621,17 @@ You are free to use, modify, and distribute this project in accordance with the 
 
 ---
 
-## SwarmX AI Team
+## 👥 SwarmX AI Team
 
-### Team Leader
+SwarmX AI is the result of a collaborative effort by a passionate team of AI developers and innovators:
 
-**Het Patel**
+| Team Members |
+|-------------|
+| Het Patel |
+| Naitik Vadher |
+| Vansh Pathak |
 
-### Core Team Members
-
-**Naitik Vadher**<br />
-**Vansh Pathak**
-
-SwarmX AI is the result of focused collaboration, rapid prototyping, and strong AI engineering effort. The team combined product thinking, frontend craftsmanship, backend architecture, and agent-system design to build a hackathon-ready platform that shows how intelligent agents can work together to create meaningful, presentation-quality outcomes.
-
+Together, the team created a multi-agent AI ecosystem where specialized agents collaborate to perform deep research, verify information, generate insights, produce summaries, and create presentation-ready outputs. Built for the Microsoft Build AI Agent Swarms Challenge, SwarmX AI demonstrates the power of autonomous agent orchestration and next-generation AI systems.
 ---
 
 ## Acknowledgements
