@@ -2,20 +2,30 @@ import { type FormEvent, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
+  ChevronRight,
   Clock,
   History,
   Play,
   RotateCcw,
   Search,
-  Terminal
+  Send,
+  Sparkles,
+  Terminal,
+  Zap
 } from "lucide-react";
 import { AgentCard } from "@/components/swarm/AgentCard";
 import { ThinkingPanel } from "@/components/swarm/ThinkingPanel";
 import { SwarmGraph } from "@/components/swarm/SwarmGraph";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useSwarmStore } from "@/store/swarmStore";
 import { agentIdentities } from "@/utils/agents";
+import { cn } from "@/lib/utils";
+
+const suggestions = [
+  "Impact of AI agents on enterprise automation",
+  "Quantum computing breakthroughs in 2025",
+  "Future of autonomous multi-agent systems"
+];
 
 export function WorkspacePage() {
   const [topic, setTopic] = useState("");
@@ -30,6 +40,10 @@ export function WorkspacePage() {
     history,
     loadFromHistory
   } = useSwarmStore();
+
+  const completedCount = agents.filter((a) => a.status === "Completed").length;
+  const totalConfidence = agents.reduce((sum, a) => sum + a.confidence, 0);
+  const avgConfidence = completedCount > 0 ? Math.round(totalConfidence / completedCount) : 0;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -49,44 +63,77 @@ export function WorkspacePage() {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
 
         <div className="p-5 sm:p-6">
-          {/* Header */}
-          <div className="mb-5 flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400">
-              <Terminal className="h-4 w-4" />
-            </span>
-            <div>
-              <h1 className="font-display text-lg font-bold tracking-tight text-white">
-                AI Command Center
-              </h1>
-              <p className="text-xs text-slate-400">
-                Enter a research mission and watch the swarm collaborate
-              </p>
+          {/* Header row */}
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <motion.span
+                animate={isRunning ? { rotate: [0, 360] } : {}}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 text-cyan-400 border border-cyan-500/20"
+              >
+                <Terminal className="h-5 w-5" />
+              </motion.span>
+              <div>
+                <h1 className="font-display text-xl font-bold tracking-tight text-white">
+                  AI Command Center
+                </h1>
+                <p className="text-xs text-slate-400">
+                  Deploy a research mission across the neural swarm
+                </p>
+              </div>
             </div>
 
-            {/* Agent readiness indicators */}
-            <div className="ml-auto hidden items-center gap-1.5 sm:flex">
-              {agents.map((agent) => {
-                const identity = agentIdentities[agent.id];
-                return (
-                  <div
-                    key={agent.id}
-                    className="group relative flex items-center"
-                    title={`${agent.name}: ${agent.status}`}
-                  >
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${
-                        agent.status === "Running"
-                          ? `${identity.dotClass} animate-pulse shadow-[0_0_8px_currentColor]`
-                          : agent.status === "Completed"
-                          ? `${identity.dotClass} opacity-80`
-                          : agent.status === "Failed"
-                          ? "bg-red-400"
-                          : "bg-slate-600"
-                      }`}
-                    />
-                  </div>
-                );
-              })}
+            {/* Live agent status row */}
+            <div className="hidden items-center gap-4 sm:flex">
+              {/* Agent readiness dots with labels */}
+              <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5">
+                {agents.map((agent) => {
+                  const identity = agentIdentities[agent.id];
+                  const Icon = identity.icon;
+                  return (
+                    <div
+                      key={agent.id}
+                      className="group relative"
+                      title={`${agent.name}: ${agent.status}`}
+                    >
+                      <span
+                        className={cn(
+                          "flex h-6 w-6 items-center justify-center rounded-md transition-all duration-300",
+                          agent.status === "Running"
+                            ? `${identity.bgClass} ${identity.textClass}`
+                            : agent.status === "Completed"
+                            ? `${identity.bgClass} ${identity.textClass} opacity-70`
+                            : agent.status === "Failed"
+                            ? "bg-red-500/10 text-red-400"
+                            : "bg-white/[0.04] text-slate-600"
+                        )}
+                      >
+                        <Icon className={cn(
+                          "h-3 w-3",
+                          agent.status === "Running" && "animate-pulse"
+                        )} />
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Stats */}
+              {(isRunning || completedCount > 0) && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-2 text-xs font-medium"
+                >
+                  <span className="flex items-center gap-1 text-cyan-400">
+                    <Zap className="h-3 w-3" />
+                    {completedCount}/5
+                  </span>
+                  {avgConfidence > 0 && (
+                    <span className="text-slate-500">· {avgConfidence}%</span>
+                  )}
+                </motion.div>
+              )}
             </div>
           </div>
 
@@ -97,11 +144,50 @@ export function WorkspacePage() {
               <textarea
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="min-h-[100px] w-full resize-none rounded-xl border border-white/[0.08] bg-black/30 py-4 pl-12 pr-4 text-base text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-cyan-500/40 focus:shadow-[0_0_30px_rgba(6,182,212,0.1)]"
-                placeholder="What intelligence do you need? e.g. 'Analyze the impact of AI agents on enterprise automation...'"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    submit(e);
+                  }
+                }}
+                className="min-h-[110px] w-full resize-none rounded-xl border border-white/[0.08] bg-black/30 py-4 pl-12 pr-14 text-[15px] text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-cyan-500/30 focus:shadow-[0_0_40px_rgba(6,182,212,0.08)]"
+                placeholder="What intelligence do you need? Describe your research mission..."
                 aria-label="Research topic"
               />
+              {/* Send icon in corner */}
+              <button
+                type="submit"
+                disabled={!topic.trim() || isRunning}
+                className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 transition-all hover:bg-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Submit"
+              >
+                <Send className="h-4 w-4" />
+              </button>
             </div>
+
+            {/* Quick suggestions */}
+            {!isRunning && !topic && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex flex-wrap gap-2"
+              >
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setTopic(s)}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-xs text-slate-400 transition-all hover:border-cyan-500/20 hover:bg-cyan-500/[0.04] hover:text-cyan-300"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {s}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+
+            {/* Action buttons */}
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button
                 type="submit"
@@ -110,7 +196,7 @@ export function WorkspacePage() {
                 disabled={!topic.trim()}
               >
                 <Play className="h-4 w-4" />
-                {isRunning ? "Swarm Active" : "Deploy Swarm"}
+                {isRunning ? "Swarm Processing" : "Deploy Swarm"}
               </Button>
               <Button
                 type="button"
@@ -148,22 +234,6 @@ export function WorkspacePage() {
         </motion.div>
       </div>
 
-      {/* ─── Loading State ─── */}
-      <AnimatePresence>
-        {isRunning && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="grid gap-3 md:grid-cols-3"
-          >
-            <Skeleton className="h-3 rounded-full" />
-            <Skeleton className="h-3 rounded-full" />
-            <Skeleton className="h-3 rounded-full" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ─── Error Display ─── */}
       <AnimatePresence>
         {error && (
@@ -171,7 +241,7 @@ export function WorkspacePage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="glass-panel overflow-hidden rounded-xl border-red-500/20"
+            className="glass-panel relative overflow-hidden rounded-xl border-red-500/20"
           >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-400/50 to-transparent" />
             <div className="flex gap-3 p-4 text-sm">
@@ -207,14 +277,19 @@ export function WorkspacePage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-panel overflow-hidden rounded-2xl"
+          className="glass-panel relative overflow-hidden rounded-2xl"
         >
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
-          <div className="flex items-center gap-2 p-5 pb-3">
-            <History className="h-4 w-4 text-violet-400" />
-            <h2 className="font-display text-base font-semibold text-white">
-              Mission History
-            </h2>
+          <div className="flex items-center justify-between p-5 pb-3">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-violet-400" />
+              <h2 className="font-display text-base font-semibold text-white">
+                Mission History
+              </h2>
+            </div>
+            <span className="text-xs text-slate-500">
+              {history.length} mission{history.length !== 1 ? "s" : ""}
+            </span>
           </div>
           <div className="grid gap-3 p-5 pt-0 md:grid-cols-2 lg:grid-cols-3">
             {history.slice(0, 6).map((item, i) => (
@@ -225,17 +300,20 @@ export function WorkspacePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.03 * i }}
-                whileHover={{ scale: 1.01 }}
-                className="group rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 text-left transition-all hover:border-cyan-500/20 hover:bg-white/[0.06]"
+                whileHover={{ y: -2, scale: 1.01 }}
+                className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all hover:border-cyan-500/20 hover:bg-cyan-500/[0.03]"
               >
-                <p className="line-clamp-2 font-medium text-white group-hover:text-cyan-300 transition-colors">
+                <p className="line-clamp-2 text-sm font-medium text-white group-hover:text-cyan-300 transition-colors">
                   {item.topic}
                 </p>
-                <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-                  <Clock className="h-3 w-3" />
-                  {new Date(
-                    item.completedAt ?? item.startedAt
-                  ).toLocaleString()}
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                    <Clock className="h-3 w-3" />
+                    {new Date(
+                      item.completedAt ?? item.startedAt
+                    ).toLocaleString()}
+                  </div>
+                  <ChevronRight className="h-3 w-3 text-slate-600 transition-colors group-hover:text-cyan-400" />
                 </div>
               </motion.button>
             ))}

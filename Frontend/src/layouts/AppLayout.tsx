@@ -5,6 +5,7 @@ import {
   Blocks,
   Bot,
   FileText,
+  Github,
   Menu,
   Presentation,
   Sparkles,
@@ -48,12 +49,12 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen flex flex-col">
       <NeuralBackground />
 
       {/* ─── Header ─── */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#030712]/70 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <header className="sticky top-0 z-50 border-b border-white/[0.05] bg-[#030712]/60 backdrop-blur-2xl backdrop-saturate-150">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
           {/* Logo */}
           <button
             type="button"
@@ -61,16 +62,20 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
             className="flex min-w-fit items-center gap-3 rounded-lg text-left transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             aria-label="Go to SwarmX AI home"
           >
-            <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-300 shadow-glow">
-              <Sparkles className="h-5 w-5 text-slate-950" />
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-400 shadow-glow">
+              <Sparkles className="h-4 w-4 text-slate-950" />
               {/* Orbital ring */}
-              <span className="absolute -inset-1 animate-orbit rounded-full border border-cyan-400/20" />
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-1.5 rounded-full border border-cyan-400/15"
+              />
             </span>
             <span className="hidden sm:block">
               <span className="block font-display text-sm font-bold tracking-tight text-white">
                 {appName}
               </span>
-              <span className="block text-[10px] font-medium uppercase tracking-[0.2em] text-cyan-400/70">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.2em] text-cyan-400/60">
                 Neural Nexus
               </span>
             </span>
@@ -79,7 +84,7 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
           {/* Desktop nav */}
           <div className="hidden items-center gap-3 md:flex">
             <BackendStatus />
-            <nav className="flex rounded-xl border border-white/[0.06] bg-white/[0.03] p-1 backdrop-blur-sm">
+            <nav className="flex rounded-xl border border-white/[0.05] bg-white/[0.02] p-1 backdrop-blur-sm">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = page === item.key;
@@ -89,7 +94,7 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
                     type="button"
                     onClick={() => navigate(item.key)}
                     className={cn(
-                      "relative flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors duration-200",
+                      "relative flex h-8 items-center gap-2 rounded-lg px-3 text-[13px] font-medium transition-colors duration-200",
                       isActive
                         ? "text-white"
                         : "text-slate-400 hover:text-slate-200"
@@ -99,15 +104,15 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
                     {isActive && (
                       <motion.div
                         layoutId="nav-indicator"
-                        className="absolute inset-0 rounded-lg bg-white/[0.08] border border-white/[0.06]"
+                        className="absolute inset-0 rounded-lg bg-white/[0.08] border border-white/[0.05]"
                         transition={{
                           type: "spring",
-                          stiffness: 350,
-                          damping: 28
+                          stiffness: 380,
+                          damping: 30
                         }}
                       />
                     )}
-                    <Icon className="relative z-10 h-4 w-4" />
+                    <Icon className="relative z-10 h-3.5 w-3.5" />
                     <span className="relative z-10 hidden lg:inline">
                       {item.label}
                     </span>
@@ -123,13 +128,13 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-300 transition hover:bg-white/[0.1]"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-300 transition hover:bg-white/[0.1]"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               ) : (
-                <Menu className="h-5 w-5" />
+                <Menu className="h-4 w-4" />
               )}
             </button>
           </div>
@@ -142,10 +147,10 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden border-t border-white/[0.06] bg-[#030712]/90 backdrop-blur-2xl md:hidden"
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden border-t border-white/[0.05] bg-[#030712]/95 backdrop-blur-2xl md:hidden"
             >
-              <div className="grid gap-1 p-3">
+              <div className="grid gap-0.5 p-2">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -154,10 +159,10 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
                       type="button"
                       onClick={() => navigate(item.key)}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition",
+                        "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition",
                         page === item.key
-                          ? "bg-white/[0.08] text-white"
-                          : "text-slate-400 hover:bg-white/[0.04] hover:text-white"
+                          ? "bg-white/[0.06] text-white"
+                          : "text-slate-400 hover:bg-white/[0.03] hover:text-white"
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -172,9 +177,29 @@ export function AppLayout({ page, onNavigate, children }: AppLayoutProps) {
       </header>
 
       {/* ─── Main Content ─── */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
+      <main className="mx-auto max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:py-8 w-full">
         <PageTransition pageKey={page}>{children}</PageTransition>
       </main>
+
+      {/* ─── Footer System Bar ─── */}
+      <footer className="border-t border-white/[0.04] bg-[#030712]/40 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-4">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-slate-600">
+              © 2025 SwarmX AI
+            </span>
+            <span className="hidden sm:inline text-[10px] text-slate-700">·</span>
+            <span className="hidden sm:inline text-[10px] text-slate-600">
+              Multi-Agent Intelligence Platform
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-wider text-slate-600">
+              v1.0
+            </span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

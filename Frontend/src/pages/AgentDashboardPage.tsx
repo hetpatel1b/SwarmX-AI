@@ -1,14 +1,18 @@
 import { motion } from "framer-motion";
-import { Blocks, Cpu } from "lucide-react";
+import { Blocks, Cpu, Signal, TrendingUp } from "lucide-react";
 import { AgentCard } from "@/components/swarm/AgentCard";
 import { SwarmGraph } from "@/components/swarm/SwarmGraph";
 import { useSwarmStore } from "@/store/swarmStore";
+import { agentIdentities } from "@/utils/agents";
+import { cn } from "@/lib/utils";
 
 export function AgentDashboardPage() {
   const { agents, activeAgent } = useSwarmStore();
   const activeCount = agents.filter(
     (a) => a.status === "Running" || a.status === "Completed"
   ).length;
+  const totalConfidence = agents.reduce((sum, a) => sum + a.confidence, 0);
+  const avgConfidence = activeCount > 0 ? Math.round(totalConfidence / Math.max(agents.filter(a => a.confidence > 0).length, 1)) : 0;
 
   return (
     <div className="space-y-6">
@@ -16,7 +20,7 @@ export function AgentDashboardPage() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+        className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
       >
         <div>
           <div className="flex items-center gap-3">
@@ -35,11 +39,36 @@ export function AgentDashboardPage() {
         </div>
 
         {/* Status badges */}
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-slate-300">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-xs font-medium text-slate-300">
             <Cpu className="h-3 w-3 text-cyan-400" />
             {activeCount}/{agents.length} Active
           </span>
+          {avgConfidence > 0 && (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1.5 text-xs font-medium text-emerald-300"
+            >
+              <TrendingUp className="h-3 w-3" />
+              {avgConfidence}% avg
+            </motion.span>
+          )}
+          {activeAgent && (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold",
+                agentIdentities[activeAgent].borderClass,
+                agentIdentities[activeAgent].bgClass,
+                agentIdentities[activeAgent].textClass
+              )}
+            >
+              <Signal className="h-3 w-3 animate-pulse" />
+              {activeAgent}
+            </motion.span>
+          )}
         </div>
       </motion.div>
 
@@ -48,9 +77,7 @@ export function AgentDashboardPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="glass-panel relative overflow-hidden rounded-2xl p-1"
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/40 to-transparent" />
         <SwarmGraph agents={agents} activeAgent={activeAgent} />
       </motion.div>
 
