@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "build": "echo 'No build step required for ES modules'",
-    "test": "echo 'Add test command here'"
+    "test": "node test-all.js"
   },
   "keywords": [
     "research-agent",

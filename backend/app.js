@@ -6,6 +6,7 @@ import summarizeRoutes from "./routes/summarize.js";
 import insightRoutes from "./routes/insight.js";
 import factcheckRoutes from "./routes/factcheck.js";
 import pipelineRoutes from "./routes/pipeline.js";
+import presentationRoutes from "./routes/presentation.js";
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/summarize", summarizeRoutes);
 app.use("/api/insights", insightRoutes);
 app.use("/api/factcheck", factcheckRoutes);
 app.use("/api/pipeline", pipelineRoutes);
+app.use("/api/presentation", presentationRoutes);
 
 // Error handling
 app.use(notFoundHandler);

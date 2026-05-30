@@ -1,6 +1,6 @@
 # SwarmX AI Agent Backend
 
-Production-ready Express.js backend with 4 specialized AI agents using Groq API.
+Production-ready Express.js backend with 5 specialized AI agents using Groq API.
 
 ## Features
 
@@ -8,7 +8,8 @@ Production-ready Express.js backend with 4 specialized AI agents using Groq API.
 - **Summarize Agent** - Creates concise summaries from text
 - **Fact Check Agent** - Verifies claims and provides confidence scores
 - **Insight Agent** - Generates trends, predictions, and recommendations
-- **Pipeline** - Chains all 4 agents: Research → Summarize → Fact Check → Insight
+- **Presentation Agent** - Builds presentation-ready slide structures
+- **Pipeline** - Chains all 5 agents: Research → Summarize → Fact Check → Insight → Presentation
 
 ## Quick Start
 
@@ -25,6 +26,8 @@ npm start
 ```
 
 Server runs on `http://localhost:5000`
+
+All agent endpoints, including presentation generation, are served by this single backend.
 
 ## API Endpoints
 
@@ -53,6 +56,24 @@ Server runs on `http://localhost:5000`
     "conclusion": "conclusion",
     "verifiedFacts": ["fact1"],
     "trustScore": 0.85
+  }
+  ```
+
+- `POST /api/presentation` - Presentation generation
+  ```json
+  {
+    "query": "Topic",
+    "research": "Research output",
+    "summary": {
+      "summary": "summary",
+      "keyInsights": ["insight1"],
+      "conclusion": "conclusion"
+    },
+    "factCheck": {
+      "verifiedFacts": ["fact1"],
+      "trustScore": 0.85
+    },
+    "insights": {"trends": []}
   }
   ```
 

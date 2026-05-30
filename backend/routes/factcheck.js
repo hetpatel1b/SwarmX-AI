@@ -27,15 +27,7 @@ router.post("/", async (req, res, next) => {
       });
     }
 
-    // Call fact check service
-    // For now returning placeholder response
-    const data = {
-      claim,
-      verification: "PENDING",
-      confidenceScore: 0,
-      sources: [],
-      timestamp: new Date().toISOString(),
-    };
+    const data = await runFactCheckAgent(claim, context);
 
     return res.status(200).json({
       success: true,
