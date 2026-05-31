@@ -1,3 +1,4 @@
+import { useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -9,13 +10,20 @@ import {
   YAxis,
   Area,
   AreaChart,
-  Cell
+  Cell,
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadarChart,
+  PolarRadiusAxis
 } from "recharts";
 import {
   Activity,
+  Brain,
   Clock,
   FileText,
   Gauge,
+  Network,
   Shield,
   TrendingUp,
   Zap
@@ -35,46 +43,76 @@ const tooltipStyle = {
   padding: "8px 12px"
 };
 
+function safeWordCount(text?: string | null): number {
+  if (!text || typeof text !== "string") return 0;
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 export function AnalyticsDashboardPage() {
   const { agents, results } = useSwarmStore();
-  const data = agents.map((agent) => {
+
+  const hasResults = !!results;
+  const completedCount = agents.filter((a) => a.status === "Completed").length;
+
+  const agentData = useMemo(() => agents.map((agent) => {
     const identity = agentIdentities[agent.id];
     return {
       name: agent.name.replace(" Agent", ""),
-      time: Number(agent.executionTime.toFixed(2)),
-      confidence: Math.round(agent.confidence),
-      throughput: Math.max(12, Math.round(agent.progress)),
+      time: Number((agent.executionTime ?? 0).toFixed(2)),
+      confidence: Math.round(agent.confidence ?? 0),
+      throughput: Math.max(12, Math.round(agent.progress ?? 0)),
       fill: identity.color
     };
-  });
+  }), [agents]);
 
-  const researchLength = results
-    ? wordCount(
-        [results.research, results.factcheck, results.insights, results.summary].join(
-          " "
-        )
-      )
-    : 0;
-  const verificationRate = results
-    ? results.verifiedFacts.length > 0
-      ? Math.min(
-          100,
-          Math.round(
-            (results.verifiedFacts.length /
-              Math.max(
-                results.verifiedFacts.length + results.keyInsights.length,
-                1
-              )) *
-              100
-          )
-        )
-      : results.trustScore
-    : 0;
+  const researchLength = useMemo(() => {
+    if (!results) return 0;
+    return safeWordCount(results.research) + safeWordCount(results.factcheck) +
+      safeWordCount(results.insights) + safeWordCount(results.summary);
+  }, [results]);
 
-  const metricCards = [
+  const verificationRate = useMemo(() => {
+    if (!results) return 0;
+    const facts = results.verifiedFacts?.length ?? 0;
+    const insights = results.keyInsights?.length ?? 0;
+    if (facts > 0) return Math.min(100, Math.round((facts / Math.max(facts + insights, 1)) * 100));
+    return results.trustScore ?? 0;
+  }, [results]);
+
+  // Trust Radar data
+  const radarData = useMemo(() => {
+    if (!results) return [
+      { metric: "Trust", value: 0, fullMark: 100 },
+      { metric: "Coverage", value: 0, fullMark: 100 },
+      { metric: "Efficiency", value: 0, fullMark: 100 },
+      { metric: "Density", value: 0, fullMark: 100 },
+      { metric: "Verification", value: 0, fullMark: 100 },
+      { metric: "Collaboration", value: 0, fullMark: 100 }
+    ];
+    const efficiency = results.totalTime > 0 ? Math.min(100, Math.round(100 - (results.totalTime / 60) * 100)) : 0;
+    const coverage = Math.min(100, Math.round((researchLength / 500) * 100));
+    const density = researchLength > 0 ? Math.min(100, Math.round((results.keyInsights?.length ?? 0) / Math.max(researchLength / 200, 1) * 100)) : 0;
+    const collaboration = completedCount > 0 ? Math.round((completedCount / agents.length) * 100) : 0;
+
+    return [
+      { metric: "Trust", value: results.trustScore ?? 0, fullMark: 100 },
+      { metric: "Coverage", value: coverage, fullMark: 100 },
+      { metric: "Efficiency", value: Math.max(20, efficiency), fullMark: 100 },
+      { metric: "Density", value: Math.max(10, density), fullMark: 100 },
+      { metric: "Verification", value: verificationRate, fullMark: 100 },
+      { metric: "Collaboration", value: collaboration, fullMark: 100 }
+    ];
+  }, [results, researchLength, verificationRate, completedCount, agents.length]);
+
+  const avgRadarScore = useMemo(() => {
+    const total = radarData.reduce((sum, d) => sum + d.value, 0);
+    return Math.round(total / radarData.length);
+  }, [radarData]);
+
+  const metricCards = useMemo(() => [
     {
       label: "Processing Time",
-      value: results ? formatSeconds(results.totalTime) : "—",
+      value: hasResults ? formatSeconds(results.totalTime ?? 0) : "—",
       icon: Clock,
       color: "text-cyan-400",
       bg: "bg-cyan-500/10",
@@ -83,7 +121,7 @@ export function AnalyticsDashboardPage() {
     },
     {
       label: "Trust Score",
-      value: results ? `${results.trustScore}%` : "—",
+      value: hasResults ? `${results.trustScore ?? 0}%` : "—",
       icon: Shield,
       color: "text-emerald-400",
       bg: "bg-emerald-500/10",
@@ -101,15 +139,15 @@ export function AnalyticsDashboardPage() {
       glow: "group-hover:shadow-[0_0_30px_rgba(139,92,246,0.1)]"
     },
     {
-      label: "Verification Rate",
-      value: verificationRate > 0 ? `${verificationRate}%` : "—",
+      label: "Swarm Efficiency",
+      value: hasResults ? `${avgRadarScore}%` : "—",
       icon: Gauge,
       color: "text-amber-400",
       bg: "bg-amber-500/10",
       border: "border-amber-500/20",
       glow: "group-hover:shadow-[0_0_30px_rgba(245,158,11,0.1)]"
     }
-  ];
+  ], [hasResults, results, researchLength, avgRadarScore]);
 
   return (
     <div className="space-y-6">
@@ -128,19 +166,19 @@ export function AnalyticsDashboardPage() {
               Swarm Intelligence
             </h1>
             <p className="text-sm text-slate-400">
-              Performance telemetry and agent collaboration analytics
+              {hasResults ? "Performance telemetry and agent collaboration analytics" : "Run a mission to populate analytics"}
             </p>
           </div>
         </div>
 
-        {results && (
+        {hasResults && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="hidden items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1.5 text-xs font-semibold text-emerald-300 sm:flex"
           >
             <Shield className="h-3 w-3" />
-            Trust: {results.trustScore}%
+            Trust: {results.trustScore ?? 0}%
           </motion.div>
         )}
       </motion.div>
@@ -187,9 +225,54 @@ export function AnalyticsDashboardPage() {
         })}
       </div>
 
-      {/* Charts */}
+      {/* Charts Row 1: Trust Radar + Confidence Bars */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Agent Confidence — Per-agent colored bars */}
+        {/* Trust Radar */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="glass-panel relative overflow-hidden rounded-2xl"
+        >
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent" />
+          <div className="flex items-center justify-between p-5 pb-3">
+            <div className="flex items-center gap-2">
+              <Network className="h-4 w-4 text-emerald-400" />
+              <h2 className="font-display text-sm font-semibold text-white">
+                Trust Radar
+              </h2>
+            </div>
+            <span className="font-mono text-xs text-slate-500">{avgRadarScore}% avg</span>
+          </div>
+          <div className="h-72 px-3 pb-5">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={radarData}>
+                <PolarGrid stroke="rgba(148,163,184,0.08)" />
+                <PolarAngleAxis
+                  dataKey="metric"
+                  tick={{ fontSize: 10, fill: "#64748b" }}
+                />
+                <PolarRadiusAxis
+                  angle={30}
+                  domain={[0, 100]}
+                  tick={false}
+                  axisLine={false}
+                />
+                <Radar
+                  name="Score"
+                  dataKey="value"
+                  stroke="#10b981"
+                  fill="#10b981"
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#10b981", strokeWidth: 0 }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Agent Confidence Bars */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -208,32 +291,13 @@ export function AnalyticsDashboardPage() {
           </div>
           <div className="h-72 px-3 pb-5">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} barCategoryGap="18%">
-                <CartesianGrid
-                  stroke="rgba(148, 163, 184, 0.05)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="name"
-                  stroke="#475569"
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={11}
-                />
-                <YAxis
-                  stroke="#475569"
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={11}
-                  domain={[0, 100]}
-                />
+              <BarChart data={agentData} barCategoryGap="18%">
+                <CartesianGrid stroke="rgba(148, 163, 184, 0.05)" vertical={false} />
+                <XAxis dataKey="name" stroke="#475569" tickLine={false} axisLine={false} fontSize={11} />
+                <YAxis stroke="#475569" tickLine={false} axisLine={false} fontSize={11} domain={[0, 100]} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(148,163,184,0.03)" }} />
-                <Bar
-                  dataKey="confidence"
-                  radius={[8, 8, 2, 2]}
-                  fillOpacity={0.85}
-                >
-                  {data.map((entry) => (
+                <Bar dataKey="confidence" radius={[8, 8, 2, 2]} fillOpacity={0.85}>
+                  {agentData.map((entry) => (
                     <Cell key={entry.name} fill={entry.fill} />
                   ))}
                 </Bar>
@@ -241,78 +305,48 @@ export function AnalyticsDashboardPage() {
             </ResponsiveContainer>
           </div>
         </motion.div>
-
-        {/* Processing Curve */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="glass-panel relative overflow-hidden rounded-2xl"
-        >
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
-          <div className="flex items-center justify-between p-5 pb-3">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-violet-400" />
-              <h2 className="font-display text-sm font-semibold text-white">
-                Processing Curve
-              </h2>
-            </div>
-            <span className="text-[10px] uppercase tracking-wider text-slate-600">Time & throughput</span>
-          </div>
-          <div className="h-72 px-3 pb-5">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <defs>
-                  <linearGradient id="gradViolet" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradEmerald" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  stroke="rgba(148, 163, 184, 0.05)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="name"
-                  stroke="#475569"
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={11}
-                />
-                <YAxis
-                  stroke="#475569"
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={11}
-                />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Area
-                  type="monotone"
-                  dataKey="time"
-                  stroke="#8b5cf6"
-                  strokeWidth={2}
-                  fill="url(#gradViolet)"
-                  dot={{ r: 4, fill: "#8b5cf6", strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: "#8b5cf6", stroke: "#8b5cf640", strokeWidth: 4 }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="throughput"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  fill="url(#gradEmerald)"
-                  dot={{ r: 4, fill: "#10b981", strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: "#10b981", stroke: "#10b98140", strokeWidth: 4 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
       </div>
+
+      {/* Charts Row 2: Processing Curve */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="glass-panel relative overflow-hidden rounded-2xl"
+      >
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
+        <div className="flex items-center justify-between p-5 pb-3">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-violet-400" />
+            <h2 className="font-display text-sm font-semibold text-white">
+              Processing Curve
+            </h2>
+          </div>
+          <span className="text-[10px] uppercase tracking-wider text-slate-600">Time & throughput</span>
+        </div>
+        <div className="h-64 px-3 pb-5">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={agentData}>
+              <defs>
+                <linearGradient id="gradViolet" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradEmerald" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="rgba(148, 163, 184, 0.05)" vertical={false} />
+              <XAxis dataKey="name" stroke="#475569" tickLine={false} axisLine={false} fontSize={11} />
+              <YAxis stroke="#475569" tickLine={false} axisLine={false} fontSize={11} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Area type="monotone" dataKey="time" stroke="#8b5cf6" strokeWidth={2} fill="url(#gradViolet)" dot={{ r: 4, fill: "#8b5cf6", strokeWidth: 0 }} activeDot={{ r: 6, fill: "#8b5cf6", stroke: "#8b5cf640", strokeWidth: 4 }} />
+              <Area type="monotone" dataKey="throughput" stroke="#10b981" strokeWidth={2} fill="url(#gradEmerald)" dot={{ r: 4, fill: "#10b981", strokeWidth: 0 }} activeDot={{ r: 6, fill: "#10b981", stroke: "#10b98140", strokeWidth: 4 }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </motion.div>
 
       {/* Agent Collaboration Grid */}
       <motion.div
@@ -323,11 +357,14 @@ export function AnalyticsDashboardPage() {
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent" />
         <div className="flex items-center justify-between p-5 pb-3">
-          <h2 className="font-display text-sm font-semibold text-white">
-            Agent Collaboration Grid
-          </h2>
+          <div className="flex items-center gap-2">
+            <Brain className="h-4 w-4 text-amber-400" />
+            <h2 className="font-display text-sm font-semibold text-white">
+              Agent Collaboration Grid
+            </h2>
+          </div>
           <span className="text-[10px] uppercase tracking-wider text-slate-600">
-            {agents.filter((a) => a.status === "Completed").length}/{agents.length} complete
+            {completedCount}/{agents.length} complete
           </span>
         </div>
         <div className="grid gap-px overflow-hidden rounded-b-2xl bg-white/[0.03] sm:grid-cols-5">
@@ -359,7 +396,7 @@ export function AnalyticsDashboardPage() {
                   {agent.name.replace(" Agent", "")}
                 </p>
                 <p className="font-display text-2xl font-bold text-white">
-                  {agent.confidence > 0 ? `${Math.round(agent.confidence)}%` : "—"}
+                  {(agent.confidence ?? 0) > 0 ? `${Math.round(agent.confidence)}%` : "—"}
                 </p>
                 <span
                   className={cn(

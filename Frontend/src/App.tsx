@@ -1,18 +1,46 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
-import { AgentDashboardPage } from "@/pages/AgentDashboardPage";
-import { AnalyticsDashboardPage } from "@/pages/AnalyticsDashboardPage";
+import { useState, lazy, Suspense, useCallback } from "react";
+import { appName, envValidationErrors } from "@/config/env";
+import { AppLayout, type PageKey } from "@/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { appName, envValidationErrors } from "@/config/env";
-import { LandingPage } from "@/pages/LandingPage";
-import { PresentationBuilderPage } from "@/pages/PresentationBuilderPage";
-import { ResultsExplorerPage } from "@/pages/ResultsExplorerPage";
-import { WorkspacePage } from "@/pages/WorkspacePage";
-import { AppLayout, type PageKey } from "@/layouts/AppLayout";
+
+// Lazy load all pages for code splitting
+const LandingPage = lazy(() => import("@/pages/LandingPage").then(m => ({ default: m.LandingPage })));
+const WorkspacePage = lazy(() => import("@/pages/WorkspacePage").then(m => ({ default: m.WorkspacePage })));
+const AgentDashboardPage = lazy(() => import("@/pages/AgentDashboardPage").then(m => ({ default: m.AgentDashboardPage })));
+const ResultsExplorerPage = lazy(() => import("@/pages/ResultsExplorerPage").then(m => ({ default: m.ResultsExplorerPage })));
+const PresentationBuilderPage = lazy(() => import("@/pages/PresentationBuilderPage").then(m => ({ default: m.PresentationBuilderPage })));
+const AnalyticsDashboardPage = lazy(() => import("@/pages/AnalyticsDashboardPage").then(m => ({ default: m.AnalyticsDashboardPage })));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center py-24">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative flex h-12 w-12 items-center justify-center">
+          <span className="absolute h-full w-full rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin" />
+          <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+        </div>
+        <p className="text-xs text-slate-500 uppercase tracking-wider">Loading module</p>
+      </div>
+    </div>
+  );
+}
+
+function renderPage(page: PageKey, onNavigate: (page: PageKey) => void) {
+  switch (page) {
+    case "landing": return <LandingPage onNavigate={onNavigate} />;
+    case "workspace": return <WorkspacePage />;
+    case "agents": return <AgentDashboardPage />;
+    case "results": return <ResultsExplorerPage />;
+    case "presentation": return <PresentationBuilderPage />;
+    case "analytics": return <AnalyticsDashboardPage />;
+    default: return <LandingPage onNavigate={onNavigate} />;
+  }
+}
 
 export function App() {
   const [page, setPage] = useState<PageKey>("landing");
+  const handleNavigate = useCallback((p: PageKey) => setPage(p), []);
 
   if (envValidationErrors.length > 0) {
     return (
@@ -39,18 +67,11 @@ export function App() {
     );
   }
 
-  const pages: Record<PageKey, ReactNode> = {
-    landing: <LandingPage onNavigate={setPage} />,
-    workspace: <WorkspacePage />,
-    agents: <AgentDashboardPage />,
-    results: <ResultsExplorerPage />,
-    presentation: <PresentationBuilderPage />,
-    analytics: <AnalyticsDashboardPage />
-  };
-
   return (
-    <AppLayout page={page} onNavigate={setPage}>
-      {pages[page]}
+    <AppLayout page={page} onNavigate={handleNavigate}>
+      <Suspense fallback={<PageLoader />}>
+        {renderPage(page, handleNavigate)}
+      </Suspense>
     </AppLayout>
   );
 }

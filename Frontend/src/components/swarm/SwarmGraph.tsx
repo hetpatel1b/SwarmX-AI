@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef, useCallback, memo } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -9,7 +9,7 @@ import type { AgentId, AgentState } from "@/types/swarm";
 import { agentIdentities } from "@/utils/agents";
 import { cn } from "@/lib/utils";
 
-// Pentagon layout — more visually interesting than linear
+// Pentagon layout
 const positions: Record<AgentId, { x: number; y: number }> = {
   research: { x: 380, y: 10 },
   factcheck: { x: 700, y: 150 },
@@ -18,19 +18,125 @@ const positions: Record<AgentId, { x: number; y: number }> = {
   presentation: { x: 60, y: 150 }
 };
 
-// Full mesh connections — shows collaboration, not just a pipeline
 const edgePairs: [AgentId, AgentId][] = [
   ["research", "factcheck"],
   ["factcheck", "insights"],
   ["insights", "summary"],
   ["summary", "presentation"],
   ["presentation", "research"],
-  // Cross connections
   ["research", "insights"],
   ["factcheck", "summary"]
 ];
 
-export function SwarmGraph({
+// === Energy Particle Overlay ===
+interface EnergyParticle {
+  edgeIndex: number;
+  t: number; // 0-1 progress along edge
+  speed: number;
+  size: number;
+  hue: number;
+}
+
+function EnergyParticlesOverlay({ agents, activeAgent }: { agents: AgentState[]; activeAgent: AgentId | null }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particlesRef = useRef<EnergyParticle[]>([]);
+  const rafRef = useRef(0);
+
+  const activeEdges = useMemo(() => {
+    return edgePairs.map(([source, target], idx) => {
+      const sourceAgent = agents.find(a => a.id === source);
+      const targetAgent = agents.find(a => a.id === target);
+      const isActive = activeAgent === source || activeAgent === target;
+      const isCompleted = sourceAgent?.status === "Completed" && targetAgent?.status === "Completed";
+      return { idx, source, target, isActive, isCompleted };
+    }).filter(e => e.isActive || e.isCompleted);
+  }, [agents, activeAgent]);
+
+  const animate = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    if (canvas.width !== rect.width * 2 || canvas.height !== rect.height * 2) {
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      ctx.setTransform(2, 0, 0, 2, 0, 0);
+    }
+
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    // Spawn particles for active edges
+    while (particlesRef.current.length < activeEdges.length * 3 && activeEdges.length > 0) {
+      const edge = activeEdges[Math.floor(Math.random() * activeEdges.length)];
+      const identity = agentIdentities[edge.source];
+      particlesRef.current.push({
+        edgeIndex: edge.idx,
+        t: 0,
+        speed: 0.003 + Math.random() * 0.006,
+        size: 1.5 + Math.random() * 2,
+        hue: parseInt(identity.color.replace("#", ""), 16) > 0 ? 0 : 188 // We'll use the actual agent color
+      });
+    }
+
+    // Scale positions to canvas
+    const scaleX = rect.width / 800;
+    const scaleY = rect.height / 440;
+
+    particlesRef.current = particlesRef.current.filter(p => {
+      p.t += p.speed;
+      if (p.t > 1) return false;
+
+      const pair = edgePairs[p.edgeIndex];
+      if (!pair) return false;
+      const [srcId, tgtId] = pair;
+      const src = positions[srcId];
+      const tgt = positions[tgtId];
+      const x = (src.x + (tgt.x - src.x) * p.t + 95) * scaleX;
+      const y = (src.y + (tgt.y - src.y) * p.t + 40) * scaleY;
+
+      const identity = agentIdentities[srcId];
+      const alpha = Math.sin(p.t * Math.PI) * 0.8;
+
+      // Glow
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, p.size * 4);
+      glow.addColorStop(0, `${identity.color}${Math.round(alpha * 40).toString(16).padStart(2, "0")}`);
+      glow.addColorStop(1, "transparent");
+      ctx.fillStyle = glow;
+      ctx.fillRect(x - p.size * 4, y - p.size * 4, p.size * 8, p.size * 8);
+
+      // Core
+      ctx.beginPath();
+      ctx.arc(x, y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `${identity.color}${Math.round(alpha * 255).toString(16).padStart(2, "0")}`;
+      ctx.fill();
+
+      return true;
+    });
+
+    rafRef.current = requestAnimationFrame(animate);
+  }, [activeEdges]);
+
+  useEffect(() => {
+    if (activeEdges.length === 0) {
+      particlesRef.current = [];
+      return;
+    }
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [animate, activeEdges.length]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 z-[5] pointer-events-none"
+      style={{ width: "100%", height: "100%" }}
+    />
+  );
+}
+
+export const SwarmGraph = memo(function SwarmGraph({
   agents,
   activeAgent
 }: {
@@ -50,7 +156,6 @@ export function SwarmGraph({
       data: {
         label: (
           <div className="flex items-center gap-3 min-w-[170px]">
-            {/* Agent icon with glow */}
             <span
               className={cn(
                 "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-300",
@@ -98,14 +203,13 @@ export function SwarmGraph({
                   )}
                 />
                 <span>{agent.status}</span>
-                {agent.confidence > 0 && (
+                {(agent.confidence ?? 0) > 0 && (
                   <span className="text-slate-500">
                     · {Math.round(agent.confidence)}%
                   </span>
                 )}
               </div>
 
-              {/* Mini progress bar */}
               {(isActive || isCompleted) && (
                 <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
                   <div
@@ -113,7 +217,7 @@ export function SwarmGraph({
                       "h-full rounded-full bg-gradient-to-r transition-all duration-500",
                       identity.gradient
                     )}
-                    style={{ width: `${agent.progress}%` }}
+                    style={{ width: `${agent.progress ?? 0}%` }}
                   />
                 </div>
               )}
@@ -145,11 +249,8 @@ export function SwarmGraph({
   const edges: Edge[] = useMemo(() => edgePairs.map(([source, target]) => {
     const sourceAgent = agents.find((a) => a.id === source);
     const targetAgent = agents.find((a) => a.id === target);
-    const isTransferring =
-      activeAgent === source || activeAgent === target;
-    const isCompleted =
-      sourceAgent?.status === "Completed" &&
-      targetAgent?.status === "Completed";
+    const isTransferring = activeAgent === source || activeAgent === target;
+    const isCompleted = sourceAgent?.status === "Completed" && targetAgent?.status === "Completed";
     const sourceIdentity = agentIdentities[source];
 
     return {
@@ -178,6 +279,9 @@ export function SwarmGraph({
       {/* Top glow */}
       <div className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
 
+      {/* Energy particles canvas overlay */}
+      <EnergyParticlesOverlay agents={agents} activeAgent={activeAgent} />
+
       {/* Neural Network label */}
       <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-lg border border-white/[0.06] bg-[#030712]/80 px-3 py-1.5 backdrop-blur-sm">
         <span className="relative flex h-1.5 w-1.5">
@@ -193,6 +297,16 @@ export function SwarmGraph({
           {activeAgent ? "Processing" : "Neural Topology"}
         </span>
       </div>
+
+      {/* Active agent signal badge */}
+      {activeAgent && (
+        <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-[#030712]/80 px-2.5 py-1.5 backdrop-blur-sm">
+          <span className={cn("h-1.5 w-1.5 rounded-full animate-pulse", agentIdentities[activeAgent].dotClass)} />
+          <span className={cn("text-[10px] font-semibold uppercase tracking-wider", agentIdentities[activeAgent].textClass)}>
+            {activeAgent}
+          </span>
+        </div>
+      )}
 
       <ReactFlow
         nodes={nodes}
@@ -214,4 +328,4 @@ export function SwarmGraph({
       </ReactFlow>
     </div>
   );
-}
+});

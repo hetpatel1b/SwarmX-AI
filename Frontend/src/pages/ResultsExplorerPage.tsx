@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Check,
   FileSearch,
   Shield,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { MarkdownCard } from "@/components/results/MarkdownCard";
 import { Tabs } from "@/components/ui/tabs";
@@ -41,26 +45,61 @@ const tabMeta: Record<string, { icon: typeof BookOpen; color: string; bg: string
   }
 };
 
+function safeWordCount(text?: string | null): number {
+  if (!text || typeof text !== "string") return 0;
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+// Confidence badge based on word count
+function ConfidenceBadge({ words }: { words: number }) {
+  const level = words > 200 ? "High" : words > 50 ? "Medium" : words > 0 ? "Low" : "None";
+  const colors = {
+    High: "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300",
+    Medium: "border-amber-500/20 bg-amber-500/[0.06] text-amber-300",
+    Low: "border-slate-500/20 bg-slate-500/[0.06] text-slate-300",
+    None: "border-white/[0.06] bg-white/[0.02] text-slate-500"
+  };
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium", colors[level])}>
+      <span className={cn(
+        "h-1 w-1 rounded-full",
+        level === "High" ? "bg-emerald-400" : level === "Medium" ? "bg-amber-400" : "bg-slate-500"
+      )} />
+      {level} Depth
+    </span>
+  );
+}
+
 export function ResultsExplorerPage() {
   const [active, setActive] = useState("Research");
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const results = useSwarmStore((state) => state.results);
-  const content: Record<string, string> = {
+
+  const content = useMemo<Record<string, string>>(() => ({
     Research: results?.research ?? "",
     "Fact Check": results?.factcheck ?? "",
     Insights: results?.insights ?? "",
     Summary: results?.summary ?? ""
-  };
+  }), [results]);
 
   const meta = tabMeta[active];
-  const currentContent = content[active];
+  const currentContent = content[active] ?? "";
+  const currentWords = safeWordCount(currentContent);
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = useCallback(async () => {
     if (!currentContent) return;
-    await navigator.clipboard.writeText(currentContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    try {
+      await navigator.clipboard.writeText(currentContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+    }
+  }, [currentContent]);
+
+  // Animated trust bar
+  const trustScore = results?.trustScore ?? 0;
 
   return (
     <div className="space-y-6">
@@ -93,7 +132,7 @@ export function ResultsExplorerPage() {
             </div>
           </div>
 
-          {/* Topic + Trust badges */}
+          {/* Badges row */}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {results?.topic && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1 text-xs text-slate-300">
@@ -108,9 +147,10 @@ export function ResultsExplorerPage() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1 text-xs font-semibold text-emerald-300"
               >
                 <Shield className="h-3 w-3" />
-                {results.trustScore}% Trust
+                {trustScore}% Trust
               </motion.span>
             )}
+            <ConfidenceBadge words={currentWords} />
             {currentContent && (
               <button
                 type="button"
@@ -121,6 +161,14 @@ export function ResultsExplorerPage() {
                 {copied ? "Copied" : "Copy"}
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1 text-xs text-slate-400 transition-all hover:border-cyan-500/20 hover:text-cyan-300"
+            >
+              {expanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+              {expanded ? "Compact" : "Expand"}
+            </button>
           </div>
         </div>
         <Tabs
@@ -130,6 +178,48 @@ export function ResultsExplorerPage() {
         />
       </motion.div>
 
+      {/* Trust indicator bar */}
+      {results && (
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          className="glass-panel rounded-xl p-4"
+          style={{ transformOrigin: "left" }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="text-xs font-medium text-slate-300">Source Trust Assessment</span>
+            </div>
+            <span className="font-mono text-xs font-bold text-white">{trustScore}%</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-white/[0.06]">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, trustScore)}%` }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              className={cn(
+                "h-full rounded-full",
+                trustScore >= 70 ? "bg-gradient-to-r from-emerald-400 to-cyan-400" :
+                trustScore >= 40 ? "bg-gradient-to-r from-amber-400 to-yellow-400" :
+                "bg-gradient-to-r from-red-400 to-rose-400"
+              )}
+            />
+          </div>
+          <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-500">
+            {(results.verifiedFacts?.length ?? 0) > 0 && (
+              <span>{results.verifiedFacts.length} verified facts</span>
+            )}
+            {(results.keyInsights?.length ?? 0) > 0 && (
+              <span>· {results.keyInsights.length} key insights</span>
+            )}
+            {currentWords > 0 && (
+              <span>· {currentWords} words in {active}</span>
+            )}
+          </div>
+        </motion.div>
+      )}
+
       {/* Content */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -138,6 +228,7 @@ export function ResultsExplorerPage() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.3 }}
+          className={expanded ? "max-h-none" : ""}
         >
           <MarkdownCard
             title={active}
