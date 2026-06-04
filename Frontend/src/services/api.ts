@@ -76,7 +76,7 @@ export function unwrapApiResponse<T>(payload: ApiResponse<T> | T): T {
 
   const response = payload as ApiResponse<T>;
   if (response.success) {
-    return response.data;
+    return ('data' in response ? response.data : response) as T;
   }
 
   throw new ApiClientError(response.error?.message || "The backend returned an error.", {

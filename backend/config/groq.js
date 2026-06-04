@@ -1,7 +1,4 @@
-import dotenv from "dotenv";
 import Groq from "groq-sdk";
-
-dotenv.config();
 
 const toNumber = (value, fallback) => {
   const parsedValue = Number(value);

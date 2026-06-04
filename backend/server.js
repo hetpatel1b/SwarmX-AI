@@ -1,8 +1,16 @@
 import "dotenv/config.js";
 import app from "./app.js";
+import { validateRuntimeEnv } from "./config/env.js";
 import { logger } from "./utils/logger.js";
 
 const PORT = process.env.PORT || 5000;
+
+try {
+  validateRuntimeEnv();
+} catch (error) {
+  logger.error("Environment validation failed", { error: error.message });
+  process.exit(1);
+}
 
 const server = app.listen(PORT, () => {
   logger.info(`Unified AI Agent Backend listening on port ${PORT}`);

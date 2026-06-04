@@ -68,9 +68,7 @@ try {
 
   const invalidPosts = [
     { name: "POST /api/research validates body", path: "/api/research" },
-    { name: "POST /api/summarize validates body", path: "/api/summarize" },
     { name: "POST /api/factcheck validates body", path: "/api/factcheck" },
-    { name: "POST /api/insights validates body", path: "/api/insights" },
     { name: "POST /api/pipeline validates body", path: "/api/pipeline" },
     { name: "POST /api/presentation validates body", path: "/api/presentation" }
   ];

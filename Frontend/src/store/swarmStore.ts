@@ -52,7 +52,12 @@ export const useSwarmStore = create<SwarmStore>((set, get) => ({
       results: null
     });
 
-    const apiPromise = swarmApi.pipeline(topic);
+    let pipelineResolved = false;
+    const apiPromise = swarmApi.pipeline(topic).then((response) => {
+      pipelineResolved = true;
+      return response;
+    });
+    const lastAgentId = agentOrder[agentOrder.length - 1];
 
     for (const id of agentOrder) {
       const started = performance.now();
@@ -80,13 +85,14 @@ export const useSwarmStore = create<SwarmStore>((set, get) => ({
       }
 
       const elapsed = (performance.now() - started) / 1000;
+      const shouldComplete = pipelineResolved || id !== lastAgentId;
       set((state) => ({
         agents: state.agents.map((agent) =>
           agent.id === id
             ? {
                 ...agent,
-                status: "Completed",
-                progress: 100,
+                status: shouldComplete ? "Completed" : "Running",
+                progress: shouldComplete ? 100 : 96,
                 executionTime: elapsed,
                 confidence: clamp(86 + agentOrder.indexOf(id) * 2)
               }
@@ -96,6 +102,18 @@ export const useSwarmStore = create<SwarmStore>((set, get) => ({
       if (features.swarmAnimation) {
         await delay(220);
       }
+    }
+
+    if (!pipelineResolved) {
+      set((state) => ({
+        activeAgent: lastAgentId,
+        currentThought: "Finalizing backend response...",
+        agents: state.agents.map((agent) =>
+          agent.id === lastAgentId && agent.progress < 96
+            ? { ...agent, status: "Running", progress: 96 }
+            : agent
+        )
+      }));
     }
 
     try {
@@ -122,7 +140,7 @@ export const useSwarmStore = create<SwarmStore>((set, get) => ({
       }));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Backend request failed.";
-      const failedAgent = [...agentOrder].reverse().find((id) => get().agents.find((agent) => agent.id === id)?.progress === 100) ?? "research";
+      const failedAgent = get().activeAgent ?? lastAgentId ?? "research";
       set((state) => ({
         activeAgent: null,
         currentThought: message,

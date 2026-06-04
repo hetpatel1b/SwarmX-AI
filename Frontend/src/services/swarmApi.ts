@@ -56,19 +56,65 @@ function normalizeTrustScore(value: unknown) {
 }
 
 export function normalizePipelineResults(topic: string, data: PipelineData, startedAt: number): SwarmResults {
-  const pipeline = data.pipeline ?? data;
-  const factCheckData = pipeline.factcheck ?? pipeline.factCheck;
-  const research = firstText(pipeline.research ?? pipeline.report ?? pipeline.rawText, ["report", "research", "rawText", "content", "text"]);
-  const factcheck = firstText(factCheckData, [
-    "factcheck",
-    "verification",
-    "message",
-    "verifiedFacts",
-    "claims",
-    "summary",
-    "content"
-  ]);
-  const insights = firstText(pipeline.insights ?? pipeline.keyInsights, [
+  const pipeline = data?.pipeline ?? data ?? {};
+  
+  const getAgentData = (agentPayload: any) => agentPayload?.data || agentPayload?.fallbackData || agentPayload || {};
+  
+  const researchAgent = getAgentData(pipeline?.research);
+  const factCheckAgent = getAgentData(pipeline?.factcheck ?? pipeline?.factCheck);
+  const insightsAgent = getAgentData(pipeline?.insight ?? pipeline?.insights);
+  const summaryAgent = getAgentData(pipeline?.summary);
+  const presentationAgent = getAgentData(pipeline?.presentation);
+
+  const research = firstText(researchAgent?.report ?? researchAgent?.rawText ?? researchAgent, ["overview", "rawData", "report", "research", "rawText", "content", "text"]);
+  let factcheck = "";
+  if (factCheckAgent && typeof factCheckAgent === "object") {
+    const fd = factCheckAgent as any;
+    const fc = fd.filteredContent || fd;
+    const vFacts = Array.isArray(fc.verifiedFacts) ? fc.verifiedFacts : [];
+    const fClaims = Array.isArray(fc.flaggedClaims) ? fc.flaggedClaims : [];
+    const tScore = typeof fc.trustScoreScaled === "number" ? fc.trustScoreScaled : typeof fc.trustScore === "number" ? fc.trustScore : 0;
+    const vPct = typeof fc.verifiedPercentage === "number" ? fc.verifiedPercentage : 0;
+    const breakdown = Array.isArray(fc.breakdown) ? fc.breakdown : [];
+    const warning = fc.warning || (vPct <= 30 && vPct > 0 ? "Low verification rate — results may be unreliable" : "");
+
+    factcheck = `### Trust Score\n**${tScore}%**\n\n### Verified Percentage\n**${vPct.toFixed(1)}%**\n\n`;
+    if (warning) {
+      factcheck += `> [!WARNING]\n> ${warning}\n\n`;
+    }
+    factcheck += `### Verified Facts\n`;
+    if (vFacts.length > 0) {
+      factcheck += vFacts.map((f: string) => `- ${f}`).join("\n") + "\n\n";
+    } else {
+      factcheck += "_No verified facts found._\n\n";
+    }
+    factcheck += `### Flagged Claims\n`;
+    if (fClaims.length > 0) {
+      factcheck += fClaims.map((c: string) => `- ${c}`).join("\n") + "\n\n";
+    } else {
+      factcheck += "_No flagged claims._\n\n";
+    }
+    factcheck += `### Breakdown\n`;
+    if (breakdown.length > 0) {
+      factcheck += `| Claim | Verdict | Reason |\n| --- | --- | --- |\n`;
+      factcheck += breakdown.map((item: any) => 
+        `| ${item.claim || ""} | **${item.verdict || ""}** | ${item.reason || ""} |`
+      ).join("\n") + "\n";
+    } else {
+      factcheck += "_No breakdown available._\n";
+    }
+  } else {
+    factcheck = firstText(factCheckAgent, [
+      "factcheck",
+      "verification",
+      "message",
+      "verifiedFacts",
+      "claims",
+      "summary",
+      "content"
+    ]);
+  }
+  const insights = firstText(insightsAgent?.keyInsights ?? insightsAgent, [
     "insights",
     "overallAnalysis",
     "keyInsights",
@@ -79,8 +125,8 @@ export function normalizePipelineResults(topic: string, data: PipelineData, star
     "conclusion",
     "content"
   ]);
-  const summary = firstText(pipeline.summary, ["summary", "keyInsights", "keyPoints", "conclusion", "content"]);
-  const presentation = firstText(pipeline.presentation, [
+  const summary = firstText(summaryAgent, ["summary", "keyInsights", "keyPoints", "conclusion", "content"]);
+  const presentation = firstText(presentationAgent, [
     "presentationSummary",
     "presentationTitle",
     "content",
@@ -91,9 +137,9 @@ export function normalizePipelineResults(topic: string, data: PipelineData, star
     "summary"
   ]);
   const keyInsights = stringArray(
-    pipeline.keyInsights ?? valueFromRecord(pipeline.summary, "keyInsights") ?? valueFromRecord(pipeline.insights, "keyInsights")
+    summaryAgent?.keyInsights ?? insightsAgent?.keyInsights ?? []
   );
-  const verifiedFacts = stringArray(pipeline.verifiedFacts ?? valueFromRecord(factCheckData, "verifiedFacts"));
+  const verifiedFacts = stringArray(factCheckAgent?.verifiedFacts ?? []);
   const completedAt = Date.now();
 
   if (!research && !factcheck && !insights && !summary && !presentation) {
@@ -112,9 +158,9 @@ export function normalizePipelineResults(topic: string, data: PipelineData, star
     rawBackendData: data,
     startedAt: new Date(startedAt).toISOString(),
     completedAt: new Date(completedAt).toISOString(),
-    totalTime: typeof pipeline.processingTime === "number" ? pipeline.processingTime : (completedAt - startedAt) / 1000,
+    totalTime: typeof pipeline?.processingTime === "number" ? pipeline.processingTime : (completedAt - startedAt) / 1000,
     trustScore: normalizeTrustScore(
-      pipeline.trustScore ?? valueFromRecord(factCheckData, "trustScore") ?? valueFromRecord(pipeline.insights, "trustScore")
+      factCheckAgent?.trustScoreScaled ?? factCheckAgent?.trustScore ?? insightsAgent?.trustScore ?? 0
     )
   };
 }

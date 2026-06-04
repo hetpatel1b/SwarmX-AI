@@ -1,4 +1,4 @@
-import { useMemo, useCallback, memo } from "react";
+import React, { useMemo, useCallback, memo, useState, Component, ErrorInfo, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle,
@@ -10,7 +10,9 @@ import {
   Shield,
   Sparkles,
   FileText,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { MarkdownCard } from "@/components/results/MarkdownCard";
 import { features } from "@/config/env";
@@ -23,8 +25,184 @@ function safeWordCount(text: string | undefined | null): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+import { parsePresentationJson } from "@/utils/slideParser";
+import type { Slide } from "@/utils/slideParser";
+
+class PresentationErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Presentation rendering error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center glass-panel rounded-2xl border border-red-500/20 bg-red-500/5">
+          <Presentation className="h-10 w-10 text-red-500/70" />
+          <div>
+            <p className="text-sm font-medium text-slate-300">Something went wrong rendering the slides</p>
+            <p className="mt-1 text-xs text-red-400/80">{this.state.error?.message}</p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function PresentationBuilderPage() {
   const results = useSwarmStore((state) => state.results);
+
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  const rawData = results?.rawBackendData as any;
+  const payload = rawData?.pipeline?.presentation || rawData?.presentation || results?.presentation;
+
+  const presentationData = parsePresentationJson(payload);
+  const slides = presentationData.slides;
+
+  console.log("Presentation Raw:", payload);
+  console.log("Normalized Slides:", slides);
+
+  const renderSlidesSection = () => {
+    if (!results) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center glass-panel rounded-2xl">
+          <Presentation className="h-10 w-10 text-slate-600" />
+          <div>
+            <p className="text-sm font-medium text-slate-400">No slides available yet</p>
+            <p className="mt-1 text-xs text-slate-500">Run the swarm to generate a presentation deck</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (slides.length === 0) {
+      // Fallback UI: show "Generating slides..." skeleton loader
+      return (
+        <div className="space-y-4 p-6 glass-panel rounded-2xl animate-pulse">
+          <div className="h-6 w-1/4 rounded bg-white/10" />
+          <div className="h-4 w-3/4 rounded bg-white/5" />
+          <div className="space-y-3 mt-6">
+            <div className="h-3 w-5/6 rounded bg-white/5" />
+            <div className="h-3 w-4/5 rounded bg-white/5" />
+            <div className="h-3 w-2/3 rounded bg-white/5" />
+          </div>
+          <div className="mt-8 flex items-center justify-between text-xs text-slate-500">
+            <span>Generating slides...</span>
+            <div className="h-2 w-12 rounded bg-white/10" />
+          </div>
+        </div>
+      );
+    }
+
+    // Safely get active slide
+    const activeSlide = slides[currentSlideIndex] || slides[0];
+    if (!activeSlide) return null;
+
+    return (
+      <div className="space-y-6">
+        {/* Interactive Slide Box */}
+        <div className="glass-panel relative overflow-hidden rounded-2xl border border-white/[0.06] bg-black/40 p-6 sm:p-8 min-h-[300px] flex flex-col justify-between">
+          {/* Slide Header */}
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-[11px] font-mono font-bold text-rose-400 uppercase tracking-widest bg-rose-500/10 px-2.5 py-1 rounded-md">
+                Slide {activeSlide.slideNumber || (currentSlideIndex + 1)}
+              </span>
+              <span className="text-xs text-slate-500 font-medium">
+                {currentSlideIndex + 1} / {slides.length}
+              </span>
+            </div>
+            
+            <h2 className="font-display text-2xl font-bold text-white mb-6">
+              {activeSlide.title || "Untitled Slide"}
+            </h2>
+
+            {/* Slide Bullets */}
+            <ul className="space-y-3 list-disc list-inside text-sm text-slate-300">
+              {Array.isArray(activeSlide.bullets) && activeSlide.bullets.map((bullet: string, index: number) => (
+                <motion.li
+                  key={index}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="leading-relaxed pl-1"
+                >
+                  {bullet}
+                </motion.li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Slide Navigation Controls */}
+          <div className="mt-8 pt-5 border-t border-white/[0.04] flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCurrentSlideIndex(prev => Math.max(0, prev - 1))}
+                disabled={currentSlideIndex === 0}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] text-slate-400 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors"
+                aria-label="Previous Slide"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentSlideIndex(prev => Math.min(slides.length - 1, prev + 1))}
+                disabled={currentSlideIndex === slides.length - 1}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] text-slate-400 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors"
+                aria-label="Next Slide"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            
+            {/* Dots */}
+            <div className="hidden sm:flex gap-1.5">
+              {slides.map((_: any, idx: number) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setCurrentSlideIndex(idx)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentSlideIndex ? "w-4 bg-rose-400" : "w-1.5 bg-white/10 hover:bg-white/20"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Speaker Notes Card */}
+        {activeSlide.speakerNotes && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-panel p-5 rounded-2xl border-white/[0.04] bg-white/[0.01]"
+          >
+            <div className="flex items-center gap-2 mb-2 text-rose-400/80">
+              <FileText className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">
+                Speaker Notes
+              </span>
+            </div>
+            <p className="text-sm text-slate-400 italic leading-relaxed">
+              {activeSlide.speakerNotes}
+            </p>
+          </motion.div>
+        )}
+      </div>
+    );
+  };
+
+
 
   const slidePreview = useMemo(() => {
     if (!results) return "";
@@ -100,8 +278,9 @@ export function PresentationBuilderPage() {
   ], [exportPdf, exportPpt]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <PresentationErrorBoundary>
+      <div className="space-y-6">
+        {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -311,19 +490,17 @@ export function PresentationBuilderPage() {
           </div>
         </motion.div>
 
-        {/* Slide preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-        >
+        {/* Slide preview / Visual Deck Viewer */}
+        <div className="space-y-6">
+          {renderSlidesSection()}
           <MarkdownCard
             title="Slide Narrative"
             content={slidePreview}
             icon={Presentation}
           />
-        </motion.div>
+        </div>
       </div>
     </div>
+    </PresentationErrorBoundary>
   );
 }

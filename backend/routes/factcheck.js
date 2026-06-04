@@ -27,6 +27,27 @@ router.post("/", async (req, res, next) => {
       });
     }
 
+    if (claim.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "claim cannot be empty",
+      });
+    }
+
+    if (claim.length > 5_000) {
+      return res.status(400).json({
+        success: false,
+        error: "claim must be 5,000 characters or fewer",
+      });
+    }
+
+    if (context !== undefined && typeof context === "string" && context.length > 50_000) {
+      return res.status(400).json({
+        success: false,
+        error: "context must be 50,000 characters or fewer",
+      });
+    }
+
     const data = await runFactCheckAgent(claim, context);
 
     return res.status(200).json({

@@ -62,10 +62,14 @@ function ConfidenceRing({
 
 export const AgentCard = memo(function AgentCard({
   agent,
-  active
+  active,
+  timeTaken,
+  progressPercent
 }: {
   agent: AgentState;
   active: boolean;
+  timeTaken?: string | null;
+  progressPercent?: number;
 }) {
   const identity = agentIdentities[agent.id];
   const AgentIcon = identity.icon;
@@ -150,9 +154,12 @@ export const AgentCard = memo(function AgentCard({
         <div className="px-4 pb-2">
           <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-slate-500">
             <span>{agent.status}</span>
-            <span className="font-mono">{Math.round(safeProgress)}%</span>
+            <span className="font-mono">{Math.round(progressPercent ?? safeProgress)}%</span>
           </div>
-          <Progress value={safeProgress} color={identity.progressColor} />
+          <Progress
+            value={progressPercent ?? safeProgress}
+            color={identity.progressColor}
+          />
         </div>
 
         <div className="flex items-center gap-3 px-4 pb-4 pt-2">
@@ -163,7 +170,7 @@ export const AgentCard = memo(function AgentCard({
                 Execution
               </p>
               <p className="mt-0.5 font-mono text-xs font-semibold text-white truncate">
-                {safeExecutionTime ? formatSeconds(safeExecutionTime) : "—"}
+                {timeTaken ? `${timeTaken}s` : (safeExecutionTime ? formatSeconds(safeExecutionTime) : "—")}
               </p>
             </div>
           </div>

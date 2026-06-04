@@ -1,0 +1,14 @@
+{
+  "name": "swarmx-ai",
+  "version": "1.0.0",
+  "description": "Multi-Agent AI Platform",
+  "scripts": {
+    "start:all": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm install && npm run dev",
+    "start:frontend": "cd Frontend && npm install && npm run dev",
+    "install:all": "cd backend && npm install && cd ../Frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,6 +1,6 @@
 # SwarmX AI Agent Backend
 
-Production-ready Express.js backend with 5 specialized AI agents using Groq API.
+Production-ready Express.js backend with 5 specialized AI agents using Gemini, Groq, and GitHub Models.
 
 ## Features
 
@@ -19,7 +19,7 @@ npm install
 
 # Set up environment
 cp .env.example .env
-# Add your GROQ_API_KEY to .env
+# Add your provider keys to .env (GEMINI_API_KEY, GROQ_API_KEY, GITHUB_TOKEN, AZURE_ENDPOINT, PHI_MODEL)
 
 # Start server
 npm start
@@ -101,7 +101,11 @@ bash test-endpoints.sh
 ## Environment Variables
 
 ```env
+GEMINI_API_KEY=your_gemini_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
+GITHUB_TOKEN=your_github_token_here
+AZURE_ENDPOINT=https://models.inference.ai.azure.com
+PHI_MODEL=Phi-4
 AI_MODEL=llama-3.3-70b-versatile
 AI_TEMPERATURE=0.2
 AI_MAX_TOKENS=1200
@@ -133,7 +137,7 @@ backend/
 ## Tech Stack
 
 - **Framework**: Express.js
-- **AI Provider**: Groq (llama-3.3-70b-versatile)
+- **AI Providers**: Google Gemini 1.5 Pro, Groq, GitHub Models (Phi-4)
 - **Runtime**: Node.js 18+
 - **Language**: JavaScript (ES Modules)
 

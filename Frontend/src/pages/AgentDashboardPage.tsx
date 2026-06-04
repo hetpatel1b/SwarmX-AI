@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Blocks, Cpu, Signal, TrendingUp } from "lucide-react";
 import { AgentCard } from "@/components/swarm/AgentCard";
@@ -7,7 +8,88 @@ import { agentIdentities } from "@/utils/agents";
 import { cn } from "@/lib/utils";
 
 export function AgentDashboardPage() {
-  const { agents, activeAgent } = useSwarmStore();
+
+  const { agents, activeAgent, isRunning, results } = useSwarmStore();
+
+  const [agentTimes, setAgentTimes] = useState<{
+    research: string | null;
+    summarizer: string | null;
+    factcheck: string | null;
+    insight: string | null;
+    presentation: string | null;
+  }>({
+    research: null,
+    summarizer: null,
+    factcheck: null,
+    insight: null,
+    presentation: null
+  });
+
+  const mapAgentIdToKey = (id: string): "research" | "summarizer" | "factcheck" | "insight" | "presentation" => {
+    if (id === "summary") return "summarizer";
+    if (id === "insights") return "insight";
+    return id as any;
+  };
+
+  const getProgressPercent = (agentId: string, status: string, currentProgress: number) => {
+    if (status === "Idle") return 0;
+    
+    const targetMap: Record<string, number> = {
+      research: 20,
+      summary: 40,
+      factcheck: 60,
+      insights: 80,
+      presentation: 100
+    };
+    
+    const target = targetMap[agentId] || 0;
+    const start = target - 20;
+
+    if (status === "Completed") {
+      return target;
+    }
+    
+    return start + (currentProgress / 100) * 20;
+  };
+
+  // Track intervals per agent
+  useEffect(() => {
+    if (!isRunning) {
+      if (!results) {
+        setAgentTimes({
+          research: null,
+          summarizer: null,
+          factcheck: null,
+          insight: null,
+          presentation: null
+        });
+      }
+      return;
+    }
+
+    if (!activeAgent) return;
+
+    const key = mapAgentIdToKey(activeAgent);
+    const startTime = Date.now();
+
+    const interval = setInterval(() => {
+      const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+      setAgentTimes((prev) => ({
+        ...prev,
+        [key]: timeTaken
+      }));
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+      const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+      setAgentTimes((prev) => ({
+        ...prev,
+        [key]: timeTaken
+      }));
+    };
+  }, [activeAgent, isRunning, results]);
+
   const activeCount = agents.filter(
     (a) => a.status === "Running" || a.status === "Completed"
   ).length;
@@ -83,16 +165,29 @@ export function AgentDashboardPage() {
 
       {/* Agent Cards */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {agents.map((agent, i) => (
-          <motion.div
-            key={agent.id}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * i + 0.15 }}
-          >
-            <AgentCard agent={agent} active={activeAgent === agent.id} />
-          </motion.div>
-        ))}
+
+        {agents.map((agent, i) => {
+          const key = mapAgentIdToKey(agent.id);
+          const timeTaken = agentTimes[key] || (agent.executionTime ? agent.executionTime.toFixed(1) : null);
+          const progressPercent = getProgressPercent(agent.id, agent.status, agent.progress);
+
+          return (
+            <motion.div
+              key={agent.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * i + 0.15 }}
+            >
+              <AgentCard
+                agent={agent}
+                active={activeAgent === agent.id}
+                timeTaken={timeTaken}
+                progressPercent={progressPercent}
+              />
+            </motion.div>
+          );
+        })}
+
       </div>
     </div>
   );

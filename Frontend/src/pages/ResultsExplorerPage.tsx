@@ -13,9 +13,15 @@ import {
   Maximize2,
   Minimize2
 } from "lucide-react";
-import { MarkdownCard } from "@/components/results/MarkdownCard";
+import {
+  FactCheckSection,
+  InsightsSection,
+  ResearchSection,
+  SummarySection
+} from "@/components/results/StructuredReportSections";
 import { Tabs } from "@/components/ui/tabs";
 import { useSwarmStore } from "@/store/swarmStore";
+import { normalizeStructuredReport } from "@/utils/reportNormalizer";
 import { cn } from "@/lib/utils";
 
 const tabMeta: Record<string, { icon: typeof BookOpen; color: string; bg: string; description: string }> = {
@@ -75,7 +81,7 @@ export function ResultsExplorerPage() {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const results = useSwarmStore((state) => state.results);
-
+  const structuredReport = useMemo(() => (results ? normalizeStructuredReport(results) : null), [results]);
   const content = useMemo<Record<string, string>>(() => ({
     Research: results?.research ?? "",
     "Fact Check": results?.factcheck ?? "",
@@ -230,11 +236,30 @@ export function ResultsExplorerPage() {
           transition={{ duration: 0.3 }}
           className={expanded ? "max-h-none" : ""}
         >
-          <MarkdownCard
-            title={active}
-            content={currentContent}
-            icon={meta.icon}
-          />
+          {structuredReport ? (
+            active === "Research" ? (
+              <ResearchSection report={structuredReport} />
+            ) : active === "Fact Check" ? (
+              <FactCheckSection report={structuredReport} />
+            ) : active === "Insights" ? (
+              <InsightsSection report={structuredReport} />
+            ) : (
+              <SummarySection report={structuredReport} />
+            )
+          ) : (
+            <div className="glass-panel relative overflow-hidden rounded-2xl">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
+              <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+                <span className={cn("flex h-16 w-16 items-center justify-center rounded-2xl", meta.bg, meta.color)}>
+                  <meta.icon className="h-7 w-7" />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-slate-300">No intelligence report yet</p>
+                  <p className="mt-1 text-xs text-slate-500">Run a mission from the workspace to generate structured results.</p>
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
     </div>
