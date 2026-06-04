@@ -98,7 +98,7 @@ SwarmX AI utilizes a modular swarm model where each agent is responsible for a s
 
 ```mermaid
 flowchart TD
-    A[User Prompt] --> B[Swarm Orchestrator (/api/pipeline)]
+    A[User Prompt] --> B["Swarm Orchestrator - API Pipeline"]
     
     B -->|Await completion| C[Research Agent]
     
@@ -110,8 +110,8 @@ flowchart TD
     E --> H
     F --> H
     
-    H --> I[Frontend UI / Graph Visualization]
-    H --> J[Exportable PPTX / PDF]
+    H --> I["Frontend UI & Graph Visualization"]
+    H --> J["Exportable PPTX & PDF"]
 ```
 
 ---
