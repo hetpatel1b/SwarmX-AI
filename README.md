@@ -31,11 +31,11 @@
 
 ---
 
-## Project Introduction
+## Project Overview
 
-**SwarmX AI** is an autonomous multi-agent intelligence platform where specialized AI agents collaborate to perform deep research, verify information, generate insights, create structured summaries, and produce presentation-ready outputs through intelligent agent orchestration.
+**SwarmX AI** is an autonomous multi-agent intelligence platform where specialized AI agents collaborate to perform deep research, verify information, analyze contexts, and produce presentation-ready outputs through intelligent agent orchestration.
 
-The project demonstrates **Agent Swarm Architecture**: instead of relying on one general-purpose assistant, SwarmX AI coordinates multiple focused agents that each contribute a distinct capability to a larger reasoning workflow. The result is a system designed for higher-quality research, stronger validation, cleaner synthesis, and outputs that are ready to share.
+The project demonstrates **Agent Swarm Architecture**: instead of relying on one general-purpose assistant, SwarmX AI coordinates multiple focused agents that each contribute a distinct capability to a larger reasoning workflow. The result is a system designed for higher-quality research, stronger validation, robust analysis, and outputs that are ready to share.
 
 > Complex questions deserve more than one perspective. SwarmX AI turns research into a coordinated intelligence workflow.
 
@@ -62,8 +62,7 @@ Use the live deployment to explore the agent workspace, trigger AI workflows, in
 | Autonomous Agent Swarm | Coordinates multiple specialized AI agents across a unified workflow. |
 | Deep Research Engine | Collects, expands, and analyzes information for complex user prompts. |
 | Fact Verification | Reviews claims, validates information, and returns confidence-oriented checks. |
-| Insight Generation | Detects trends, extracts implications, and produces strategic recommendations. |
-| Smart Summarization | Converts long-form agent output into concise, structured summaries. |
+| Comprehensive Analysis | Consolidates summaries, trend discovery, and key insight extraction into a single robust process. |
 | Presentation Builder | Transforms research intelligence into presentation-ready content. |
 | Interactive Agent UI | Visualizes agents, workflow states, results, and analytics through a modern frontend. |
 | REST API Backend | Provides clear endpoints for individual agents and complete pipeline execution. |
@@ -71,11 +70,11 @@ Use the live deployment to explore the agent workspace, trigger AI workflows, in
 
 ### Feature Cards
 
-| Research | Verification | Insights | Summary | Presentation |
-| --- | --- | --- | --- | --- |
-| Deep topic exploration | Claim validation | Trend discovery | Key finding extraction | Slide-ready structure |
-| Context gathering | Confidence scoring | Recommendations | Concise synthesis | Executive communication |
-| Knowledge expansion | Reliability checks | Predictive signals | Readable outputs | Hackathon-ready demos |
+| Research | Verification | Analysis | Presentation |
+| --- | --- | --- | --- |
+| Deep topic exploration | Claim validation | Key finding extraction | Slide-ready structure |
+| Context gathering | Confidence scoring | Trend discovery | Executive communication |
+| Knowledge expansion | Reliability checks | Concise synthesis | Hackathon-ready demos |
 
 ---
 
@@ -86,9 +85,8 @@ SwarmX AI uses a modular swarm model where each agent owns a specific reasoning 
 | Agent | Role | Output |
 | --- | --- | --- |
 | **Research Agent** | Performs deep research and information gathering. | Expanded topic analysis, context, and source-oriented findings. |
-| **Fact Checker Agent** | Verifies claims and validates generated information. | Fact checks, confidence scores, and reliability signals. |
-| **Insight Agent** | Identifies trends, recommendations, and predictive signals. | Strategic insights and decision-support observations. |
-| **Summarizer Agent** | Creates concise summaries and extracts key findings. | Executive summaries and compressed knowledge artifacts. |
+| **Analysis Agent** | Analyzes research data to extract insights and construct summaries. | Executive summaries, strategic insights, predictive signals, and trends. |
+| **Fact Checker Agent** | Verifies claims and validates generated information. | Fact checks, trust scores, and reliability signals. |
 | **Presentation Agent** | Converts intelligence into presentation-ready content. | Structured slides, talking points, and polished narrative flow. |
 
 ---
@@ -99,19 +97,18 @@ SwarmX AI uses a modular swarm model where each agent owns a specific reasoning 
 flowchart TD
     A[User Prompt] --> B[Swarm Orchestrator]
     B --> C[Research Agent]
-    C --> D[Fact Checker Agent]
-    D --> E[Insight Agent]
-    E --> F[Summarizer Agent]
-    F --> G[Presentation Agent]
-    G --> H[Structured Output]
+    C --> D[Analysis Agent]
+    C --> E[Fact Checker Agent]
+    C --> F[Presentation Agent]
+    D --> H[Structured Output]
+    E --> H
+    F --> H
     H --> I[Frontend Workspace]
     H --> J[Reports, Summaries, Presentations]
 
     C -. individual API .-> K[/POST /api/research/]
-    D -. individual API .-> L[/POST /api/factcheck/]
-    E -. individual API .-> M[/POST /api/insights/]
-    F -. individual API .-> N[/POST /api/summarize/]
-    G -. individual API .-> O[/POST /api/presentation/]
+    E -. individual API .-> L[/POST /api/factcheck/]
+    F -. individual API .-> M[/POST /api/presentation/]
     B -. full workflow .-> P[/POST /api/pipeline/]
 ```
 
@@ -136,6 +133,7 @@ flowchart LR
 
     subgraph AI["AI Runtime"]
         Groq[Groq API]
+        Azure[Azure OpenAI]
         Model[LLM Model]
     end
 
@@ -147,7 +145,9 @@ flowchart LR
     Routes --> Orchestrator
     Orchestrator --> Agents
     Agents --> Groq
+    Agents --> Azure
     Groq --> Model
+    Azure --> Model
 ```
 
 ---
@@ -158,27 +158,28 @@ flowchart LR
 
 | Category | Technology |
 | --- | --- |
-| Framework | React |
+| Framework | React (v18) |
 | Language | TypeScript |
 | Build Tool | Vite |
 | Styling | Tailwind CSS |
-| UI System | Shadcn UI-style components |
+| UI System | Class Variance Authority & Radix-like UI |
 | Animation | Framer Motion |
 | Agent Visualization | React Flow |
 | State Management | Zustand |
 | HTTP Client | Axios |
 | Charts | Recharts |
+| Document Export | jsPDF & PptxGenJS |
 
 ### Backend
 
 | Category | Technology |
 | --- | --- |
-| Runtime | Node.js |
+| Runtime | Node.js (v18+) |
 | Server | Express.js |
-| AI Provider | Groq API |
-| Interface | REST APIs |
+| AI Providers | Groq API, Azure/GitHub Models |
+| SDKs | groq-sdk, @google/generative-ai |
 | Configuration | dotenv |
-| Middleware | CORS, JSON parsing, centralized error handling |
+| Security | Helmet, CORS, Rate Limiting |
 
 ### Deployment
 
@@ -196,16 +197,17 @@ The frontend is designed as a modern AI workspace that makes agent collaboration
 ```text
 Frontend/
   src/
-    components/        Reusable UI, system status, results, and swarm components
-    config/            Runtime environment configuration
-    hooks/             API mutation and backend health hooks
+    components/        UI elements, system status, results, and swarm components
+    config/            Runtime environment validation (env.ts)
+    hooks/             API hooks and custom React logic
     layouts/           Application shell and navigation structure
-    pages/             Workspace, dashboards, landing, results, presentation builder
+    lib/               Utility libraries and configurations
+    pages/             AgentDashboardPage, WorkspacePage, AnalyticsDashboardPage...
     services/          Axios API clients and swarm API functions
     store/             Zustand state management
     styles/            Global styling
-    types/             Shared TypeScript API and swarm types
-    utils/             Agent metadata, exporters, formatting, storage helpers
+    types/             Shared TypeScript interfaces
+    utils/             Formatting and storage helpers
 ```
 
 ### Frontend Highlights
@@ -217,7 +219,7 @@ Frontend/
 | Results Explorer | Organized view for generated research, summaries, insights, and checks. |
 | Analytics Dashboard | UI layer for telemetry-style metrics and workflow visibility. |
 | Presentation Builder | Converts generated intelligence into structured presentation content. |
-| Backend Status | Health-aware UI feedback for API availability. |
+| Robust Validation | Strongly typed environment variables checking at runtime. |
 
 ---
 
@@ -227,13 +229,13 @@ The backend exposes a clean Express API with independent agent routes and a comb
 
 ```text
 backend/
-  agents/              Research, summary, insight, fact-check, and presentation agents
-  config/              Groq client configuration
-  middleware/          Error and not-found handlers
-  routes/              REST endpoints for each agent and the full pipeline
-  services/            Shared research service logic
-  utils/               Logger utilities
-  app.js               Express app configuration
+  agents/              analysisAgent.js, factCheckAgent.js, presentationAgent.js, researchAgent.js
+  config/              Groq and environment configuration
+  middleware/          Auth, Error, and Not-Found handlers
+  routes/              REST endpoints: factcheck.js, pipeline.js, presentation.js, research.js
+  services/            Shared logic and helper functions
+  utils/               Logger and caching utilities
+  app.js               Express app configuration with rate limiting and security headers
   server.js            Server startup and graceful shutdown
 ```
 
@@ -241,16 +243,15 @@ backend/
 
 | Layer | Responsibility |
 | --- | --- |
-| Express App | Configures CORS, JSON parsing, health checks, routes, and middleware. |
-| Agent Modules | Encapsulate the prompt and execution logic for each AI role. |
-| Pipeline Route | Runs multi-agent orchestration through a unified endpoint. |
-| Groq Config | Centralizes model provider configuration and credentials. |
-| Error Middleware | Provides consistent API error handling. |
-| Graceful Shutdown | Handles termination signals cleanly in production. |
+| Express App | Configures Helmet, CORS, Rate Limiting, JSON parsing, routes, and middleware. |
+| Agent Modules | Encapsulate prompts, error handling, retries, and execution logic. |
+| Pipeline Route | Runs multi-agent orchestration efficiently through parallel execution in a unified endpoint. |
+| Robust Execution | Wraps AI calls with caching, timeouts, semantic validation, and automatic retries. |
+| Security Middleware| Provides rate limiting and API key authentication for secure API consumption. |
 
 ---
 
-## API Overview
+## API Documentation
 
 Base URL for local development:
 
@@ -260,38 +261,61 @@ http://localhost:5000
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `GET` | `/health` | Check backend status and runtime health. |
+| `GET` | `/` | Verify API status and uptime. |
+| `GET` | `/health` | Check backend runtime health. |
 | `POST` | `/api/research` | Run the Research Agent. |
-| `POST` | `/api/summarize` | Run the Summarizer Agent. |
 | `POST` | `/api/factcheck` | Run the Fact Checker Agent. |
-| `POST` | `/api/insights` | Run the Insight Agent. |
 | `POST` | `/api/presentation` | Run the Presentation Agent. |
-| `POST` | `/api/pipeline` | Run the full multi-agent workflow. |
+| `POST` | `/api/pipeline` | Run the full multi-agent orchestrator workflow. |
 
 ### Example Request
 
 ```bash
 curl -X POST http://localhost:5000/api/pipeline \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: your_client_api_key_here" \
   -d '{
-    "topic": "How can agent swarms improve enterprise research workflows?"
+    "query": "How can agent swarms improve enterprise research workflows?"
   }'
 ```
 
-### Typical Response Shape
+---
 
-```json
-{
-  "success": true,
-  "data": {
-    "research": "...",
-    "factCheck": "...",
-    "insights": "...",
-    "summary": "...",
-    "presentation": "..."
-  }
-}
-```
+## Environment Variables
+
+### Backend Environment
+
+Create `backend/.env` from `backend/.env.example`.
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `PORT` | No | Backend port. Defaults to `5000`. |
+| `NODE_ENV` | No | Runtime environment (`development` or `production`). |
+| `GROQ_API_KEY` | Yes | Groq API key used by the Research and Presentation agents. |
+| `AZURE_ENDPOINT` | Yes | Endpoint for models routed via Azure/GitHub models. |
+| `GITHUB_TOKEN` | Yes | Auth token for Azure/GitHub models. |
+| `PHI_MODEL` | No | Target model for fact-checking (default: `gpt-4o-mini`). |
+| `AI_MODEL` | No | Standard model name used across agents. |
+| `AI_TEMPERATURE` | No | Controls generation creativity (default: 0.2). |
+| `AI_MAX_TOKENS` | No | Maximum response token budget for agent outputs. |
+| `CLIENT_API_KEYS` | No | Comma-separated list of accepted API keys for frontend requests. |
+| `FRONTEND_URL` | No | The exact URL of the frontend to configure CORS restrictions. |
+| `TRUST_PROXY` | No | Set to `true` when deployed behind a reverse proxy (e.g., Render). |
+
+### Frontend Environment
+
+Create `Frontend/.env` from `Frontend/.env.example`.
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `VITE_APP_NAME` | Yes | Public app name displayed in the UI. |
+| `VITE_APP_ENV` | Yes | Runtime environment (development, production, test). |
+| `VITE_API_BASE_URL` | Yes | Backend API base URL. |
+| `VITE_ENABLE_ANALYTICS` | Yes | Enables analytics dashboard features (`true`/`false`). |
+| `VITE_ENABLE_VOICE_INPUT` | Yes | Feature flag for voice input controls. |
+| `VITE_ENABLE_EXPORTS` | Yes | Enables PDF/PPT export actions. |
+| `VITE_ENABLE_SWARM_ANIMATION` | Yes | Enables visible swarm animation sequences. |
+| `VITE_DEFAULT_THEME` | Yes | Default UI theme (`dark`, `light`, or `system`). |
 
 ---
 
@@ -301,38 +325,26 @@ curl -X POST http://localhost:5000/api/pipeline \
 SwarmX-AI/
   README.md
   .gitignore
+  docker-compose.yml
+  package.json
   backend/
     agents/
-      factCheckAgent.js
-      insightAgent.js
-      presentationAgent.js
-      researchAgent.js
-      summaryAgent.js
     config/
-      groq.js
     middleware/
-      errorMiddleware.js
     routes/
-      factcheck.js
-      insight.js
-      pipeline.js
-      presentation.js
-      research.js
-      summarize.js
     services/
-      researchService.js
     utils/
-      logger.js
     app.js
     server.js
     package.json
-    .env.example
+    .env
   Frontend/
     src/
       components/
       config/
       hooks/
       layouts/
+      lib/
       pages/
       services/
       store/
@@ -340,7 +352,7 @@ SwarmX-AI/
       types/
       utils/
     package.json
-    .env.example
+    .env
 ```
 
 ---
@@ -353,7 +365,7 @@ SwarmX-AI/
 | --- | --- |
 | Node.js | 18 or higher |
 | npm | 9 or higher recommended |
-| Groq API Key | Required for AI agent execution |
+| API Keys | Groq & GitHub/Azure required for AI execution |
 
 ### 1. Clone the Repository
 
@@ -362,23 +374,25 @@ git clone https://github.com/your-username/SwarmX-AI.git
 cd SwarmX-AI
 ```
 
-### 2. Install Backend Dependencies
+### 2. Install Dependencies Rapidly
+
+From the root directory, run:
 
 ```bash
-cd backend
-npm install
-```
-
-### 3. Install Frontend Dependencies
-
-```bash
-cd ../Frontend
-npm install
+npm run install:all
 ```
 
 ---
 
 ## Local Development Setup
+
+You can start both the frontend and backend concurrently from the root directory:
+
+```bash
+npm run start:all
+```
+
+Alternatively, to start them individually:
 
 ### Start the Backend
 
@@ -387,11 +401,7 @@ cd backend
 npm run dev
 ```
 
-Backend runs on:
-
-```text
-http://localhost:5000
-```
+Backend runs on: `http://localhost:5000`
 
 ### Start the Frontend
 
@@ -409,76 +419,9 @@ cd Frontend
 npm run build
 ```
 
-### Run Backend Tests
-
-```bash
-cd backend
-npm test
-```
-
 ---
 
-## Environment Variables
-
-### Backend Environment
-
-Create `backend/.env` from `backend/.env.example`.
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `PORT` | No | Backend port. Defaults to `5000`. |
-| `NODE_ENV` | No | Runtime environment such as `development` or `production`. |
-| `GROQ_API_KEY` | Yes | Groq API key used by all AI agents. |
-| `AI_MODEL` | No | Model name. Example: `llama-3.3-70b-versatile`. |
-| `AI_TEMPERATURE` | No | Controls generation creativity. |
-| `AI_MAX_TOKENS` | No | Maximum response token budget for agent outputs. |
-| `LOG_LEVEL` | No | Logging level. |
-| `DEBUG` | No | Debug mode toggle. |
-
-Example:
-
-```env
-PORT=5000
-NODE_ENV=development
-GROQ_API_KEY=your_groq_api_key_here
-AI_MODEL=llama-3.3-70b-versatile
-AI_TEMPERATURE=0.2
-AI_MAX_TOKENS=1200
-LOG_LEVEL=info
-DEBUG=false
-```
-
-### Frontend Environment
-
-Create `Frontend/.env` from `Frontend/.env.example`.
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `VITE_APP_NAME` | No | Public app name displayed in the UI. |
-| `VITE_APP_ENV` | No | Frontend runtime environment. |
-| `VITE_API_BASE_URL` | Yes | Backend API base URL used by Axios. |
-| `VITE_ENABLE_ANALYTICS` | No | Enables analytics dashboard features. |
-| `VITE_ENABLE_VOICE_INPUT` | No | Feature flag for voice input controls. |
-| `VITE_ENABLE_EXPORTS` | No | Enables PDF/PPT export actions. |
-| `VITE_ENABLE_SWARM_ANIMATION` | No | Enables visible swarm animation sequences. |
-| `VITE_DEFAULT_THEME` | No | Default UI theme. |
-
-Example:
-
-```env
-VITE_APP_NAME=SwarmX AI
-VITE_APP_ENV=development
-VITE_API_BASE_URL=http://localhost:5000
-VITE_ENABLE_ANALYTICS=true
-VITE_ENABLE_VOICE_INPUT=true
-VITE_ENABLE_EXPORTS=true
-VITE_ENABLE_SWARM_ANIMATION=true
-VITE_DEFAULT_THEME=dark
-```
-
----
-
-## Deployment Information
+## Deployment Guide
 
 SwarmX AI is deployed on **Render**.
 
@@ -488,15 +431,14 @@ SwarmX AI is deployed on **Render**.
 | Live Application | [https://swarmx-ai-p2v4.onrender.com/](https://swarmx-ai-p2v4.onrender.com/) |
 | Backend Runtime | Node.js |
 | Frontend Build | Vite production build |
-| API Style | REST |
 
 ### Production Checklist
 
-- Set `GROQ_API_KEY` in the Render environment configuration.
-- Configure the backend service with Node.js 18 or higher.
-- Point `VITE_API_BASE_URL` to the production backend URL.
+- Set `TRUST_PROXY=true` in the backend environment.
+- Set `FRONTEND_URL` to restrict CORS correctly.
+- Provide all required API keys (`GROQ_API_KEY`, `GITHUB_TOKEN`, `AZURE_ENDPOINT`).
+- Provide `CLIENT_API_KEYS` in the backend and ensure the frontend includes `X-API-Key` headers if configured.
 - Run `npm run build` for the frontend before deployment.
-- Confirm `/health` returns a healthy response after deployment.
 
 ---
 
@@ -524,61 +466,27 @@ Add screenshots to a `docs/screenshots/` directory and update the image paths be
 
 ---
 
+## Performance Highlights
+
+| Highlight | Impact |
+| --- | --- |
+| Caching Mechanism | Fast repeated queries by caching outputs via crypto-hashes. |
+| Intelligent Orchestration | Parallel execution (Analysis, Fact Check, Presentation) mapped via Promise.allSettled. |
+| Fault Tolerance | Wrapped agent executions with timeout checks, retry wrappers, and fallback responses. |
+| Strict Type Safety | Validated runtime configuration on frontend launch with `env.ts`. |
+| Security | Baked-in Rate Limiting and Helmet Headers. |
+
+---
+
 ## Future Roadmap
 
 | Status | Roadmap Item |
 | --- | --- |
 | Planned | Source citation and retrieval-augmented research workflows. |
 | Planned | Agent memory for multi-session intelligence continuity. |
-| Planned | Human-in-the-loop review controls for fact-check approval. |
-| Planned | Exportable PDF and PPT templates for business-ready reports. |
 | Planned | Team workspaces and collaborative research sessions. |
 | Planned | Streaming agent execution updates over WebSockets or Server-Sent Events. |
-| Planned | Custom agent creation and workflow builder. |
 | Planned | Evaluation dashboard for agent accuracy, latency, and output quality. |
-
----
-
-## Performance Highlights
-
-| Highlight | Impact |
-| --- | --- |
-| Specialized Agent Roles | Reduces prompt complexity by assigning focused tasks to each agent. |
-| Modular REST Endpoints | Enables individual testing, debugging, and agent reuse. |
-| Pipeline Execution | Supports end-to-end orchestration from one API call. |
-| Lightweight Backend | Express-based architecture keeps the API simple and deployable. |
-| Vite Frontend | Fast local development and optimized production builds. |
-| Feature Flags | Environment-driven controls for analytics, exports, animation, and future features. |
-
----
-
-## Why SwarmX AI is Different
-
-Most AI tools present a single conversational interface. SwarmX AI is built around a stronger idea: **intelligence should be orchestrated**.
-
-| Traditional AI Assistant | SwarmX AI |
-| --- | --- |
-| One model handles every task. | Multiple specialized agents collaborate. |
-| Output quality depends on one prompt. | Workflow quality improves through staged reasoning. |
-| Research, verification, and summarization are blended together. | Each step has a clear agent owner. |
-| Hard to inspect the process. | Agent workflow is visible through the UI and API. |
-| Often stops at text generation. | Produces structured, presentation-ready outputs. |
-
-SwarmX AI is designed for people who need answers they can actually use: founders, analysts, students, researchers, product teams, consultants, and hackathon judges evaluating practical AI systems.
-
----
-
-## Microsoft Build AI Challenge Alignment
-
-SwarmX AI directly aligns with the **Microsoft Build AI Challenge - Agent Swarms** theme by demonstrating how multiple agents can coordinate to solve complex tasks.
-
-| Challenge Principle | SwarmX AI Implementation |
-| --- | --- |
-| Multi-agent collaboration | Research, fact-checking, insight, summary, and presentation agents work together. |
-| Specialized reasoning | Each agent owns a focused intelligence function. |
-| Orchestrated workflows | The `/api/pipeline` endpoint coordinates the complete swarm process. |
-| Practical AI utility | Outputs are designed for real-world research and presentation use cases. |
-| Extensible architecture | New agents can be added through modular backend routes and frontend UI patterns. |
 
 ---
 
@@ -593,23 +501,6 @@ Contributions are welcome. SwarmX AI is structured so developers can improve age
 3. Make a focused change.
 4. Test the backend and frontend locally.
 5. Open a pull request with a clear description.
-
-### Contribution Areas
-
-| Area | Examples |
-| --- | --- |
-| Agents | New agent roles, better prompts, stronger validation, improved orchestration. |
-| Frontend | Workflow UX, visual polish, accessibility, dashboards, export flows. |
-| Backend | API reliability, validation, logging, tests, streaming responses. |
-| Documentation | Setup guides, screenshots, architecture notes, demo walkthroughs. |
-
-### Development Standards
-
-- Keep changes focused and easy to review.
-- Avoid committing secrets or local `.env` files.
-- Use environment variables for runtime configuration.
-- Prefer readable, maintainable code over clever shortcuts.
-- Include testing notes in pull requests.
 
 ---
 
@@ -632,6 +523,7 @@ SwarmX AI is the result of a collaborative effort by a passionate team of AI dev
 | Vansh Pathak |
 
 Together, the team created a multi-agent AI ecosystem where specialized agents collaborate to perform deep research, verify information, generate insights, produce summaries, and create presentation-ready outputs. Built for the Microsoft Build AI Agent Swarms Challenge, SwarmX AI demonstrates the power of autonomous agent orchestration and next-generation AI systems.
+
 ---
 
 ## Acknowledgements
@@ -641,7 +533,7 @@ SwarmX AI was created for the **Microsoft Build AI Challenge - Agent Swarms**.
 Special thanks to:
 
 - Microsoft Build for inspiring builders to explore the next generation of agentic AI systems.
-- Groq for high-performance AI inference capabilities.
+- Groq and Azure/GitHub Models for high-performance AI inference capabilities.
 - Render for simple cloud deployment.
 - The open-source ecosystem behind React, TypeScript, Vite, Tailwind CSS, Express, Zustand, Framer Motion, React Flow, Axios, and Recharts.
 
