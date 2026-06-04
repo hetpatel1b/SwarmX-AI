@@ -327,21 +327,6 @@ The backend enforces rate limiting (20 requests/minute per IP) and requires an `
 
 ---
 
-# Screenshots
-
-<p align="center">
-  <em>(Add high-resolution screenshots to your `docs/screenshots/` folder)</em>
-</p>
-
-```md
-![Workspace Interface](docs/screenshots/workspace.png)
-![Swarm Graph Orchestration](docs/screenshots/swarm-graph.png)
-![Presentation Export](docs/screenshots/presentation-builder.png)
-![Analytics Dashboard](docs/screenshots/analytics.png)
-```
-
----
-
 # Performance
 
 * **Caching:** Implementation of `crypto`-hashed MD5 keys in `agentCache` guarantees zero-latency responses for repeated queries.
