@@ -37,13 +37,6 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/HetPatel/SwarmX-AI?style=social" alt="GitHub stars" />
-  <img src="https://img.shields.io/github/forks/HetPatel/SwarmX-AI?style=social" alt="GitHub forks" />
-  <img src="https://img.shields.io/github/license/HetPatel/SwarmX-AI?style=social" alt="License" />
-  <img src="https://profile-counter.glitch.me/SwarmX-AI/count.svg" alt="Visitor Count" />
-</p>
-
-<p align="center">
   <strong>Built for the Microsoft Build AI Challenge - Agent Swarms</strong>
 </p>
 
